@@ -1,6 +1,6 @@
 use ash::extensions::ext::MetalSurface;
 use ash::vk::{
-    make_api_version, ApplicationInfo, Bool32, DebugUtilsMessageSeverityFlagsEXT,
+    self, make_api_version, ApplicationInfo, Bool32, DebugUtilsMessageSeverityFlagsEXT,
     DebugUtilsMessageTypeFlagsEXT, DebugUtilsMessengerCallbackDataEXT,
     DebugUtilsMessengerCreateInfoEXT, DebugUtilsMessengerEXT, InstanceCreateInfo, QueueFlags,
     FALSE,
@@ -20,7 +20,7 @@ unsafe extern "system" fn vulkan_debug_callback(
     _user_data: *mut std::os::raw::c_void,
 ) -> Bool32 {
     let callback_data = *p_callback_data;
-    let message_id_number: i32 = callback_data.message_id_number as i32;
+    let message_id_number = callback_data.message_id_number;
 
     let message_id_name = if callback_data.p_message_id_name.is_null() {
         Cow::from("")
@@ -62,7 +62,7 @@ pub struct Vulkan {
 }
 
 impl Vulkan {
-    pub fn new(name: &str, layers: &[CString], extensions: &[&'static CStr]) -> Self {
+    pub fn new(name: &str, layers: &[&str], extensions: &[&str]) -> Self {
         let c_name = CString::new(name).unwrap();
         let appinfo = ApplicationInfo::builder()
             .application_name(&c_name)
