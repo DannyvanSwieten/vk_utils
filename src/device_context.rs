@@ -10,11 +10,7 @@ pub struct DeviceContext {
 unsafe impl Send for DeviceContext {}
 
 impl DeviceContext {
-    pub(crate) fn new(
-        gpu: &Gpu,
-        extensions: &[&'static CStr],
-        builder: DeviceCreateInfoBuilder,
-    ) -> Self {
+    pub(crate) fn new(gpu: &Gpu, extensions: &[&str], builder: DeviceCreateInfoBuilder) -> Self {
         let priorities: [f32; 1] = [1.];
         if let Some(index) = gpu.family_type_index(QueueFlags::GRAPHICS) {
             let queue_info = [DeviceQueueCreateInfo::builder()
@@ -24,7 +20,7 @@ impl DeviceContext {
 
             let extension_names_raw: Vec<*const i8> = extensions
                 .iter()
-                .map(|layer_name| layer_name.as_ptr())
+                .map(|layer_name| layer_name.as_ptr() as _)
                 .collect();
 
             let builder = builder

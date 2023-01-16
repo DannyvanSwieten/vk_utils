@@ -1,7 +1,4 @@
-use std::{
-    ffi::{CStr, CString},
-    rc::Rc,
-};
+use std::{ffi::CString, rc::Rc};
 
 use ash::vk::{
     DynamicState, GraphicsPipelineCreateInfo, Pipeline, PipelineCache,

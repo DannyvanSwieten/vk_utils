@@ -1,6 +1,6 @@
 use ash::extensions::ext::MetalSurface;
 use ash::vk::{
-    self, make_api_version, ApplicationInfo, Bool32, DebugUtilsMessageSeverityFlagsEXT,
+    make_api_version, ApplicationInfo, Bool32, DebugUtilsMessageSeverityFlagsEXT,
     DebugUtilsMessageTypeFlagsEXT, DebugUtilsMessengerCallbackDataEXT,
     DebugUtilsMessengerCreateInfoEXT, DebugUtilsMessengerEXT, InstanceCreateInfo, QueueFlags,
     FALSE,
@@ -126,7 +126,7 @@ impl Vulkan {
         &self.instance
     }
 
-    pub fn hardware_devices_with_queue_support(&self, flags: QueueFlags) -> Vec<Gpu> {
+    pub fn devices_with_queue_support(&self, flags: QueueFlags) -> Vec<Gpu> {
         unsafe {
             self.instance
                 .enumerate_physical_devices()
@@ -146,6 +146,17 @@ impl Vulkan {
                         .next()
                 })
                 .collect::<Vec<Gpu>>()
+        }
+    }
+
+    pub fn physical_devices(&self) -> Vec<Gpu> {
+        unsafe {
+            self.instance
+                .enumerate_physical_devices()
+                .expect("Physical device enumeration failed")
+                .iter()
+                .map(|device| Gpu::new(self, device))
+                .collect()
         }
     }
 }

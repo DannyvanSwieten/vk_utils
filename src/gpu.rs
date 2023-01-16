@@ -47,9 +47,9 @@ impl Gpu {
         }
     }
 
-    pub fn device_context<'a, F>(
+    pub fn device_context_builder<'a, F>(
         &'a self,
-        extensions: &[&'static CStr],
+        extensions: &[&str],
         builder_function: F,
     ) -> DeviceContext
     where
@@ -60,6 +60,10 @@ impl Gpu {
             extensions,
             builder_function(DeviceCreateInfo::builder()),
         )
+    }
+
+    pub fn device_context<'a>(&'a self, extensions: &[&str]) -> DeviceContext {
+        DeviceContext::new(self, extensions, DeviceCreateInfo::builder())
     }
 
     pub(crate) fn family_type_index(&self, flags: QueueFlags) -> Option<u32> {

@@ -6,6 +6,7 @@ pub mod graphics_pipeline;
 pub mod image2d_resource;
 pub mod image_resource;
 pub mod memory;
+pub mod pipeline_descriptor;
 pub mod queue;
 pub mod renderpass;
 pub mod shader_library;

@@ -1,5 +1,4 @@
 use ash::vk::{ShaderModule, ShaderModuleCreateInfo, ShaderStageFlags};
-use ash::Device;
 use std::collections::HashMap;
 use std::path::Path;
 use std::rc::Rc;
