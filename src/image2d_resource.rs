@@ -5,9 +5,10 @@ use crate::image_resource::ImageResource;
 use crate::memory::memory_type_index;
 
 use ash::vk::{
-    DeviceMemory, Extent3D, Format, Image, ImageCreateInfo, ImageLayout, ImageType,
-    ImageUsageFlags, ImageView, ImageViewCreateInfo, MemoryAllocateInfo, MemoryPropertyFlags,
-    SampleCountFlags, SharingMode,
+    DeviceMemory, Extent3D, Format, Image, ImageAspectFlags, ImageCreateInfo, ImageLayout,
+    ImageSubresource, ImageSubresourceRange, ImageType, ImageUsageFlags, ImageView,
+    ImageViewCreateInfo, ImageViewType, MemoryAllocateInfo, MemoryPropertyFlags, SampleCountFlags,
+    SharingMode,
 };
 
 use ash::Device;
@@ -70,7 +71,14 @@ impl Image2DResource {
                     .bind_image_memory(image, memory, 0)
                     .expect("Image memory bind failed");
 
-                let view_info = ImageViewCreateInfo::builder().format(format).image(image);
+                let subresource_range = ImageSubresourceRange::builder()
+                    .base_array_layer(0)
+                    .aspect_mask(ImageAspectFlags::COLOR);
+                let view_info = ImageViewCreateInfo::builder()
+                    .format(format)
+                    .image(image)
+                    .view_type(ImageViewType::TYPE_2D)
+                    .subresource_range(*subresource_range);
                 let view = context
                     .handle()
                     .create_image_view(&view_info, None)
