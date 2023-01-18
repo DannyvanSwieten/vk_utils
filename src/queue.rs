@@ -33,6 +33,10 @@ impl CommandQueue {
         }
     }
 
+    pub fn device(&self) -> Rc<DeviceContext> {
+        self.device.clone()
+    }
+
     pub fn family_type_index(&self) -> u32 {
         self.queue_family_index
     }

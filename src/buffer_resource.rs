@@ -87,7 +87,7 @@ impl BufferResource {
                 .expect("Memory map failed on buffer") as *mut T;
 
             let mut output = Vec::new();
-            let count = (self.size as usize / std::mem::size_of::<T>()) as isize;
+            let count = (self.content_size as usize / std::mem::size_of::<T>()) as isize;
             for i in 0..count {
                 output.push(*ptr.offset(i) as T);
             }
@@ -122,7 +122,7 @@ impl BufferResource {
             );
 
             let mut flags = MemoryAllocateFlagsInfo::builder()
-                .flags(MemoryAllocateFlags::DEVICE_ADDRESS_KHR)
+                // .flags(MemoryAllocateFlags::DEVICE_ADDRESS_KHR)
                 .build();
             if let Some(type_index) = type_index {
                 let allocation_info = MemoryAllocateInfo::builder()

@@ -9,7 +9,7 @@ pub mod memory;
 pub mod pipeline_descriptor;
 pub mod queue;
 pub mod renderpass;
-pub mod shader_library;
+pub mod shader_compiler;
 pub mod swapchain;
 pub mod swapchain_image;
 pub mod swapchain_util;

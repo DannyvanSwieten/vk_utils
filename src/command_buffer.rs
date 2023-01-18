@@ -11,6 +11,7 @@ use ash::vk::{
 use crate::buffer_resource::BufferResource;
 use crate::device_context::DeviceContext;
 use crate::image_resource::ImageResource;
+use crate::pipeline_descriptor::ComputePipeline;
 use crate::queue::CommandQueue;
 use crate::wait_handle::WaitHandle;
 
@@ -23,7 +24,8 @@ pub struct CommandBuffer {
 }
 
 impl CommandBuffer {
-    pub fn new(device: Rc<DeviceContext>, queue: Rc<CommandQueue>) -> Self {
+    pub fn new(queue: Rc<CommandQueue>) -> Self {
+        let device = queue.device();
         let info = *CommandBufferAllocateInfo::builder()
             .command_buffer_count(1)
             .command_pool(queue.pool());
@@ -103,6 +105,33 @@ impl CommandBuffer {
             self.device
                 .handle()
                 .cmd_bind_pipeline(self.handle(), bind_point, *pipeline);
+        }
+    }
+
+    pub fn bind_compute_pipeline(&mut self, pipeline: &ComputePipeline) {
+        unsafe {
+            self.device.handle().cmd_bind_pipeline(
+                self.handle(),
+                PipelineBindPoint::COMPUTE,
+                *pipeline.handle(),
+            );
+
+            self.device.handle().cmd_bind_descriptor_sets(
+                self.handle(),
+                PipelineBindPoint::COMPUTE,
+                *pipeline.layout(),
+                0,
+                pipeline.descriptor_sets(),
+                &[],
+            )
+        }
+    }
+
+    pub fn dispatch_compute(&mut self, width: u32, height: u32, depth: u32) {
+        unsafe {
+            self.device
+                .handle()
+                .cmd_dispatch(self.handle(), width, height, depth)
         }
     }
 

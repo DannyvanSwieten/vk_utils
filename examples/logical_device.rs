@@ -12,7 +12,7 @@ pub fn main() {
         .iter()
         .position(|device| device.supports_graphics());
 
-    let logical_device = if let Some(index) = graphics_device_index {
+    let _logical_device = if let Some(index) = graphics_device_index {
         physical_devices[index].device_context(&[])
     } else {
         panic!()

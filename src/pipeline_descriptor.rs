@@ -1,40 +1,225 @@
-use ash::vk::{self, DescriptorPoolSize, PushConstantRange, ShaderStageFlags};
+use std::{
+    collections::HashMap,
+    ffi::{CStr, CString},
+    rc::Rc,
+};
 
-pub struct PipelineDescriptor {
-    uniforms: Vec<DescriptorPoolSize>,
-    push_constant_range: Option<vk::PushConstantRange>,
+use ash::vk::{
+    ComputePipelineCreateInfo, DescriptorBufferInfo, DescriptorPoolCreateInfo, DescriptorPoolSize,
+    DescriptorSet, DescriptorSetAllocateInfo, DescriptorSetLayout, DescriptorSetLayoutBinding,
+    DescriptorSetLayoutCreateInfo, DescriptorType, Pipeline, PipelineCache, PipelineLayout,
+    PipelineLayoutCreateInfo, PipelineShaderStageCreateInfo, PushConstantRange,
+    ShaderModuleCreateInfo, ShaderStageFlags, WriteDescriptorSet,
+};
+use shaderc::ShaderKind;
+use spirv_reflect::types::ReflectDescriptorType;
+
+use crate::{
+    buffer_resource::BufferResource,
+    device_context::DeviceContext,
+    shader_compiler::{ShaderCompiler, ShaderReflection},
+};
+
+pub struct ComputePipeline {
+    device: Rc<DeviceContext>,
+    pipeline_layout: PipelineLayout,
+    pipeline: Pipeline,
+    descriptor_sets: Vec<DescriptorSet>,
 }
 
-impl PipelineDescriptor {
-    pub fn new() -> Self {
-        Self {
-            uniforms: Vec::new(),
-            push_constant_range: None,
+impl ComputePipeline {
+    pub fn handle(&self) -> &Pipeline {
+        &self.pipeline
+    }
+
+    pub fn layout(&self) -> &PipelineLayout {
+        &self.pipeline_layout
+    }
+
+    pub fn descriptor_sets(&self) -> &[DescriptorSet] {
+        &self.descriptor_sets
+    }
+
+    pub fn set_storage_buffer(&mut self, set: usize, binding: usize, buffer: &BufferResource) {
+        let buffer_info = [*DescriptorBufferInfo::builder()
+            .buffer(buffer.buffer)
+            .range(buffer.size())];
+        let write = WriteDescriptorSet::builder()
+            .buffer_info(&buffer_info)
+            .descriptor_type(DescriptorType::STORAGE_BUFFER)
+            .dst_set(self.descriptor_sets[set])
+            .dst_binding(binding as _);
+        unsafe { self.device.handle().update_descriptor_sets(&[*write], &[]) }
+    }
+
+    pub fn set_uniform_buffer(&mut self, set: usize, binding: usize, buffer: &BufferResource) {
+        let buffer_info = [*DescriptorBufferInfo::builder()
+            .buffer(buffer.buffer)
+            .range(buffer.size())];
+        let write = WriteDescriptorSet::builder()
+            .buffer_info(&buffer_info)
+            .descriptor_type(DescriptorType::UNIFORM_BUFFER)
+            .dst_set(self.descriptor_sets[set])
+            .dst_binding(binding as _);
+        unsafe { self.device.handle().update_descriptor_sets(&[*write], &[]) }
+    }
+
+    fn create_descriptor_set_bindings(
+        reflection: &ShaderReflection,
+    ) -> HashMap<u32, Vec<DescriptorSetLayoutBinding>> {
+        let mut sets = HashMap::<u32, Vec<DescriptorSetLayoutBinding>>::new();
+        if let Some(bindings) = reflection.bindings() {
+            for binding in bindings {
+                let mut b = DescriptorSetLayoutBinding::builder();
+                b = b
+                    .binding(binding.binding)
+                    .descriptor_count(binding.count)
+                    .stage_flags(ShaderStageFlags::COMPUTE);
+                match binding.descriptor_type {
+                    ReflectDescriptorType::Undefined => todo!(),
+                    ReflectDescriptorType::Sampler => {
+                        b = b.descriptor_type(DescriptorType::SAMPLER);
+                    }
+                    ReflectDescriptorType::CombinedImageSampler => {
+                        b = b.descriptor_type(DescriptorType::COMBINED_IMAGE_SAMPLER);
+                    }
+                    ReflectDescriptorType::SampledImage => {
+                        b = b.descriptor_type(DescriptorType::SAMPLED_IMAGE);
+                    }
+                    ReflectDescriptorType::StorageImage => {
+                        b = b.descriptor_type(DescriptorType::STORAGE_IMAGE);
+                    }
+                    ReflectDescriptorType::UniformTexelBuffer => {
+                        b = b.descriptor_type(DescriptorType::UNIFORM_TEXEL_BUFFER);
+                    }
+                    ReflectDescriptorType::StorageTexelBuffer => {
+                        b = b.descriptor_type(DescriptorType::STORAGE_TEXEL_BUFFER);
+                    }
+                    ReflectDescriptorType::UniformBuffer => {
+                        b = b.descriptor_type(DescriptorType::UNIFORM_BUFFER);
+                    }
+                    ReflectDescriptorType::StorageBuffer => {
+                        b = b.descriptor_type(DescriptorType::STORAGE_BUFFER);
+                    }
+                    ReflectDescriptorType::UniformBufferDynamic => {
+                        b = b.descriptor_type(DescriptorType::UNIFORM_BUFFER_DYNAMIC);
+                    }
+                    ReflectDescriptorType::StorageBufferDynamic => {
+                        b = b.descriptor_type(DescriptorType::STORAGE_BUFFER_DYNAMIC);
+                    }
+                    ReflectDescriptorType::InputAttachment => {
+                        b = b.descriptor_type(DescriptorType::INPUT_ATTACHMENT);
+                    }
+                    ReflectDescriptorType::AccelerationStructureNV => {
+                        b = b.descriptor_type(DescriptorType::ACCELERATION_STRUCTURE_NV);
+                    }
+                }
+                sets.entry(binding.set).or_insert_with(Vec::new).push(*b);
+            }
         }
+        sets
     }
 
-    pub fn with_push_constants<T: Sized>(mut self, stage: ShaderStageFlags) {
-        self.push_constant_range = Some(
-            *PushConstantRange::builder()
-                .size(std::mem::size_of::<T>() as _)
-                .stage_flags(stage),
-        )
-    }
+    pub fn new_from_source_string(
+        device: Rc<DeviceContext>,
+        max_frames_in_flight: u32,
+        src: &str,
+        entry_point: &str,
+    ) -> Option<Self> {
+        let result = ShaderCompiler::compile_string(src, ShaderKind::Compute, "", entry_point);
+        let this = if !result.failed() {
+            let reflection = result.reflect();
+            let descriptor_set_bindings = Self::create_descriptor_set_bindings(&reflection);
+            let mut layouts = vec![DescriptorSetLayout::default(); descriptor_set_bindings.len()];
+            let mut pool_sizes = Vec::new();
+            for (index, set) in descriptor_set_bindings {
+                let mut builder = DescriptorSetLayoutCreateInfo::builder();
+                builder = builder.bindings(&set);
+                let layout = unsafe {
+                    device
+                        .handle()
+                        .create_descriptor_set_layout(&builder, None)
+                        .expect("Creating descriptorset layout failed: {}")
+                };
 
-    pub fn with_uniform(mut self, uniform_type: ash::vk::DescriptorType, count: u32) -> Self {
-        self.uniforms.push(DescriptorPoolSize {
-            ty: uniform_type,
-            descriptor_count: count,
-        });
-        self
-    }
+                layouts[index as usize] = layout;
 
-    pub fn with_uniforms(mut self, uniforms: &[(ash::vk::DescriptorType, u32)]) -> Self {
-        self.uniforms
-            .extend(uniforms.iter().map(|(t, c)| DescriptorPoolSize {
-                ty: *t,
-                descriptor_count: *c,
-            }));
-        self
+                for binding in set {
+                    let size = DescriptorPoolSize::builder()
+                        .ty(binding.descriptor_type)
+                        .descriptor_count(binding.descriptor_count);
+                    pool_sizes.push(*size);
+                }
+            }
+
+            let pipeline_info_builder = PipelineLayoutCreateInfo::builder().set_layouts(&layouts);
+            let pipeline_layout = unsafe {
+                device
+                    .handle()
+                    .create_pipeline_layout(&pipeline_info_builder, None)
+                    .expect("Pipeline layout creation failed")
+            };
+
+            let shader_info = ShaderModuleCreateInfo::builder().code(result.spirv());
+            let shader_module = unsafe {
+                device
+                    .handle()
+                    .create_shader_module(&shader_info, None)
+                    .expect("Shader module creation failed")
+            };
+
+            let s = CString::new(entry_point).expect("String creation failed");
+            let shader_stage_info = PipelineShaderStageCreateInfo::builder()
+                .module(shader_module)
+                .stage(ShaderStageFlags::COMPUTE)
+                .name(&s);
+
+            let compute_pipeline_info = ComputePipelineCreateInfo::builder()
+                .layout(pipeline_layout)
+                .stage(*shader_stage_info);
+
+            let pipeline = unsafe {
+                device
+                    .handle()
+                    .create_compute_pipelines(
+                        PipelineCache::null(),
+                        &[*compute_pipeline_info],
+                        None,
+                    )
+                    .expect("Pipeline creation failed")[0]
+            };
+
+            let pool_info = DescriptorPoolCreateInfo::builder()
+                .pool_sizes(&pool_sizes)
+                .max_sets(max_frames_in_flight);
+
+            let pool = unsafe {
+                device
+                    .handle()
+                    .create_descriptor_pool(&pool_info, None)
+                    .expect("Descriptor pool creation failed")
+            };
+            let allocation_info = DescriptorSetAllocateInfo::builder()
+                .descriptor_pool(pool)
+                .set_layouts(&layouts);
+            let descriptor_sets = unsafe {
+                device
+                    .handle()
+                    .allocate_descriptor_sets(&allocation_info)
+                    .expect("Descriptor set allocation failed")
+            };
+
+            Some(Self {
+                device,
+                pipeline_layout,
+                pipeline,
+                descriptor_sets,
+            })
+        } else {
+            println!("{}", result.error_string());
+            None
+        };
+
+        this
     }
 }
