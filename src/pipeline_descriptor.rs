@@ -56,7 +56,9 @@ impl ComputePipeline {
     }
 
     pub fn set_storage_image(&mut self, set: usize, binding: usize, image: &Image2DResource) {
-        let image_info = [*DescriptorImageInfo::builder().image_layout(image.layout())];
+        let image_info = [*DescriptorImageInfo::builder()
+            .image_view(image.view())
+            .image_layout(image.layout())];
         let write = WriteDescriptorSet::builder()
             .image_info(&image_info)
             .descriptor_type(DescriptorType::STORAGE_IMAGE)
