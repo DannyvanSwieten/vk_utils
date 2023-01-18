@@ -43,7 +43,7 @@ impl ComputePipeline {
     pub fn set_storage_buffer(&mut self, set: usize, binding: usize, buffer: &BufferResource) {
         let buffer_info = [*DescriptorBufferInfo::builder()
             .buffer(buffer.buffer)
-            .range(buffer.size())];
+            .range(buffer.content_size())];
         let write = WriteDescriptorSet::builder()
             .buffer_info(&buffer_info)
             .descriptor_type(DescriptorType::STORAGE_BUFFER)
