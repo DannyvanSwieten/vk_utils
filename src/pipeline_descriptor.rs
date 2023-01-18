@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     ffi::{CStr, CString},
+    path::Path,
     rc::Rc,
 };
 
@@ -118,6 +119,21 @@ impl ComputePipeline {
             }
         }
         sets
+    }
+
+    pub fn new_from_source_file(
+        path: &Path,
+        device: Rc<DeviceContext>,
+        max_frames_in_flight: u32,
+        entry_point: &str,
+    ) -> Option<Self> {
+        let src = std::fs::read_to_string(path);
+        match src {
+            Ok(src) => {
+                Self::new_from_source_string(device, max_frames_in_flight, &src, entry_point)
+            }
+            Err(_) => None,
+        }
     }
 
     pub fn new_from_source_string(
