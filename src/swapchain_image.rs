@@ -1,4 +1,4 @@
-use ash::vk::{Format, Image, ImageLayout};
+use ash::vk::{Format, Image, ImageLayout, ImageView};
 
 use crate::image_resource::ImageResource;
 
@@ -8,11 +8,13 @@ pub struct SwapchainImage {
     format: Format,
     width: u32,
     height: u32,
+    view: ImageView,
 }
 
 impl SwapchainImage {
     pub(crate) fn new(
         handle: Image,
+        view: ImageView,
         layout: ImageLayout,
         format: Format,
         width: u32,
@@ -24,6 +26,7 @@ impl SwapchainImage {
             format,
             width,
             height,
+            view,
         }
     }
 }
@@ -55,5 +58,9 @@ impl ImageResource for SwapchainImage {
 
     fn handle(&self) -> Image {
         self.handle
+    }
+
+    fn view(&self) -> ImageView {
+        self.view
     }
 }

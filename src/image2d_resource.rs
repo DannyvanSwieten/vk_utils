@@ -6,7 +6,8 @@ use crate::memory::memory_type_index;
 
 use ash::vk::{
     DeviceMemory, Extent3D, Format, Image, ImageCreateInfo, ImageLayout, ImageType,
-    ImageUsageFlags, MemoryAllocateInfo, MemoryPropertyFlags, SampleCountFlags, SharingMode,
+    ImageUsageFlags, ImageView, ImageViewCreateInfo, MemoryAllocateInfo, MemoryPropertyFlags,
+    SampleCountFlags, SharingMode,
 };
 
 use ash::Device;
@@ -17,6 +18,7 @@ pub struct Image2DResource {
     memory: DeviceMemory,
     pub layout: ImageLayout,
     image_info: ImageCreateInfo,
+    view: ImageView,
 }
 
 impl Image2DResource {
@@ -68,12 +70,19 @@ impl Image2DResource {
                     .bind_image_memory(image, memory, 0)
                     .expect("Image memory bind failed");
 
+                let view_info = ImageViewCreateInfo::builder().format(format).image(image);
+                let view = context
+                    .handle()
+                    .create_image_view(&view_info, None)
+                    .expect("Image view creation failed");
+
                 Self {
                     device: device.clone(),
                     image,
                     memory,
                     layout: ImageLayout::UNDEFINED,
                     image_info: image_info.build(),
+                    view,
                 }
             } else {
                 panic!()
@@ -104,6 +113,10 @@ impl ImageResource for Image2DResource {
 
     fn set_layout(&mut self, layout: ImageLayout) {
         self.layout = layout
+    }
+
+    fn view(&self) -> ImageView {
+        self.view
     }
 }
 

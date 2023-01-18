@@ -132,9 +132,11 @@ impl Swapchain {
 
         let swapchain_images = images
             .iter()
-            .map(|image| {
+            .enumerate()
+            .map(|(index, image)| {
                 SwapchainImage::new(
                     *image,
+                    image_views[index],
                     ash::vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
                     format.format,
                     width,

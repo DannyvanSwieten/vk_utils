@@ -1,4 +1,4 @@
-use ash::vk::{Format, Image, ImageLayout};
+use ash::vk::{Format, Image, ImageLayout, ImageView};
 
 pub trait ImageResource {
     fn width(&self) -> u32;
@@ -8,4 +8,5 @@ pub trait ImageResource {
     fn set_layout(&mut self, layout: ImageLayout);
     fn layout(&self) -> ImageLayout;
     fn handle(&self) -> Image;
+    fn view(&self) -> ImageView;
 }

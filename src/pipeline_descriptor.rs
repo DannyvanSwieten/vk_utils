@@ -6,11 +6,11 @@ use std::{
 };
 
 use ash::vk::{
-    ComputePipelineCreateInfo, DescriptorBufferInfo, DescriptorPoolCreateInfo, DescriptorPoolSize,
-    DescriptorSet, DescriptorSetAllocateInfo, DescriptorSetLayout, DescriptorSetLayoutBinding,
-    DescriptorSetLayoutCreateInfo, DescriptorType, Pipeline, PipelineCache, PipelineLayout,
-    PipelineLayoutCreateInfo, PipelineShaderStageCreateInfo, PushConstantRange,
-    ShaderModuleCreateInfo, ShaderStageFlags, WriteDescriptorSet,
+    ComputePipelineCreateInfo, DescriptorBufferInfo, DescriptorImageInfo, DescriptorPoolCreateInfo,
+    DescriptorPoolSize, DescriptorSet, DescriptorSetAllocateInfo, DescriptorSetLayout,
+    DescriptorSetLayoutBinding, DescriptorSetLayoutCreateInfo, DescriptorType, Pipeline,
+    PipelineCache, PipelineLayout, PipelineLayoutCreateInfo, PipelineShaderStageCreateInfo,
+    PushConstantRange, ShaderModuleCreateInfo, ShaderStageFlags, WriteDescriptorSet,
 };
 use shaderc::ShaderKind;
 use spirv_reflect::types::ReflectDescriptorType;
@@ -18,6 +18,8 @@ use spirv_reflect::types::ReflectDescriptorType;
 use crate::{
     buffer_resource::BufferResource,
     device_context::DeviceContext,
+    image2d_resource::Image2DResource,
+    image_resource::ImageResource,
     shader_compiler::{ShaderCompiler, ShaderReflection},
 };
 
@@ -48,6 +50,16 @@ impl ComputePipeline {
         let write = WriteDescriptorSet::builder()
             .buffer_info(&buffer_info)
             .descriptor_type(DescriptorType::STORAGE_BUFFER)
+            .dst_set(self.descriptor_sets[set])
+            .dst_binding(binding as _);
+        unsafe { self.device.handle().update_descriptor_sets(&[*write], &[]) }
+    }
+
+    pub fn set_storage_image(&mut self, set: usize, binding: usize, image: &Image2DResource) {
+        let image_info = [*DescriptorImageInfo::builder().image_layout(image.layout())];
+        let write = WriteDescriptorSet::builder()
+            .image_info(&image_info)
+            .descriptor_type(DescriptorType::STORAGE_IMAGE)
             .dst_set(self.descriptor_sets[set])
             .dst_binding(binding as _);
         unsafe { self.device.handle().update_descriptor_sets(&[*write], &[]) }
