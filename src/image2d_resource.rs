@@ -73,7 +73,9 @@ impl Image2DResource {
 
                 let subresource_range = ImageSubresourceRange::builder()
                     .base_array_layer(0)
-                    .aspect_mask(ImageAspectFlags::COLOR);
+                    .aspect_mask(ImageAspectFlags::COLOR)
+                    .level_count(1)
+                    .layer_count(1);
                 let view_info = ImageViewCreateInfo::builder()
                     .format(format)
                     .image(image)
