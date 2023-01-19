@@ -302,7 +302,11 @@ impl CommandBuffer {
         }
     }
 
-    pub fn copy_image_to_buffer(&mut self, image: &impl ImageResource, buffer: &BufferResource) {
+    pub fn copy_image_to_buffer(
+        &mut self,
+        image: &impl ImageResource,
+        buffer: &mut BufferResource,
+    ) {
         let layer_info = ImageSubresourceLayers::builder()
             .layer_count(1)
             .aspect_mask(ImageAspectFlags::COLOR);
