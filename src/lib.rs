@@ -16,6 +16,7 @@ pub mod swapchain_util;
 pub mod vulkan;
 pub mod wait_handle;
 
+pub use ash::extensions::ext::DebugUtils;
 pub use ash::vk::{
     BufferUsageFlags, Format, ImageLayout, ImageUsageFlags, MemoryPropertyFlags, QueueFlags,
 };
