@@ -1,11 +1,11 @@
 use std::{ffi::CString, rc::Rc};
 
 use ash::vk::{
-    DynamicState, GraphicsPipelineCreateInfo, Pipeline, PipelineCache,
+    GraphicsPipelineCreateInfo, Pipeline, PipelineCache,
     PipelineColorBlendStateCreateInfo, PipelineDepthStencilStateCreateInfo,
     PipelineDynamicStateCreateInfo, PipelineLayout, PipelineMultisampleStateCreateInfo,
     PipelineRasterizationStateCreateInfo, PipelineShaderStageCreateInfo,
-    PipelineTessellationStateCreateInfo, PipelineViewportStateCreateInfo, PolygonMode, RenderPass,
+    PipelineTessellationStateCreateInfo, PipelineViewportStateCreateInfo, PolygonMode,
     ShaderModule, ShaderStageFlags, Viewport,
 };
 

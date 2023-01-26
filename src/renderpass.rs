@@ -1,8 +1,7 @@
-use std::{ptr::null, rc::Rc};
+use std::{rc::Rc};
 
 use ash::vk::{
-    AttachmentDescription, AttachmentLoadOp, AttachmentReference, Device, Format, ImageLayout,
-    RenderPassCreateInfo, SampleCountFlags, SubpassDependency, SubpassDescription,
+    AttachmentDescription, AttachmentReference, Format, ImageLayout, SubpassDependency, SubpassDescription,
 };
 
 use crate::{device_context::DeviceContext, swapchain::Swapchain};

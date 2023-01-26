@@ -5,7 +5,7 @@ use crate::memory::memory_type_index;
 
 use ash::vk::{
     Buffer, BufferCreateInfo, BufferDeviceAddressInfo, BufferUsageFlags, DeviceAddress,
-    DeviceMemory, MappedMemoryRange, MemoryAllocateFlags, MemoryAllocateFlagsInfo,
+    DeviceMemory, MappedMemoryRange, MemoryAllocateFlagsInfo,
     MemoryAllocateInfo, MemoryMapFlags, MemoryPropertyFlags, SharingMode,
 };
 pub struct BufferResource {

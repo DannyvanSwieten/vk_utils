@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    ffi::{CStr, CString},
+    ffi::{CString},
     path::Path,
     rc::Rc,
 };
@@ -9,8 +9,7 @@ use ash::vk::{
     ComputePipelineCreateInfo, DescriptorBufferInfo, DescriptorImageInfo, DescriptorPoolCreateInfo,
     DescriptorPoolSize, DescriptorSet, DescriptorSetAllocateInfo, DescriptorSetLayout,
     DescriptorSetLayoutBinding, DescriptorSetLayoutCreateInfo, DescriptorType, Pipeline,
-    PipelineCache, PipelineLayout, PipelineLayoutCreateInfo, PipelineShaderStageCreateInfo,
-    PushConstantRange, ShaderModuleCreateInfo, ShaderStageFlags, WriteDescriptorSet,
+    PipelineCache, PipelineLayout, PipelineLayoutCreateInfo, PipelineShaderStageCreateInfo, ShaderModuleCreateInfo, ShaderStageFlags, WriteDescriptorSet,
 };
 use shaderc::ShaderKind;
 use spirv_reflect::types::ReflectDescriptorType;

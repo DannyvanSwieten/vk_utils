@@ -5,8 +5,7 @@ use crate::image_resource::ImageResource;
 use crate::memory::memory_type_index;
 
 use ash::vk::{
-    DeviceMemory, Extent3D, Format, Image, ImageAspectFlags, ImageCreateInfo, ImageLayout,
-    ImageSubresource, ImageSubresourceRange, ImageType, ImageUsageFlags, ImageView,
+    DeviceMemory, Extent3D, Format, Image, ImageAspectFlags, ImageCreateInfo, ImageLayout, ImageSubresourceRange, ImageType, ImageUsageFlags, ImageView,
     ImageViewCreateInfo, ImageViewType, MemoryAllocateInfo, MemoryPropertyFlags, SampleCountFlags,
     SharingMode,
 };

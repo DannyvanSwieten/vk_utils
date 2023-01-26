@@ -1,7 +1,7 @@
 use crate::gpu::Gpu;
 use ash::vk::{DeviceCreateInfoBuilder, DeviceQueueCreateInfo, QueueFlags};
 use ash::Device;
-use std::ffi::CStr;
+
 pub struct DeviceContext {
     gpu: Gpu,
     handle: Device,

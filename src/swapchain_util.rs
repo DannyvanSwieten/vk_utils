@@ -8,7 +8,7 @@ pub(crate) fn create_swapchain(
     ctx: &ash::Device,
     surface_loader: &ash::extensions::khr::Surface,
     surface: ash::vk::SurfaceKHR,
-    swapchain_loader: &ash::extensions::khr::Swapchain,
+    _swapchain_loader: &ash::extensions::khr::Swapchain,
     old_swapchain: ash::vk::SwapchainKHR,
     queue: Rc<CommandQueue>,
     width: u32,
