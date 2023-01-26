@@ -5,20 +5,21 @@ use vk_utils::command_buffer::CommandBuffer;
 use vk_utils::pipeline_descriptor::ComputePipeline;
 use vk_utils::queue::CommandQueue;
 use vk_utils::vulkan::Vulkan;
+use vk_utils::DebugUtils;
 
 pub fn main() {
     let vulkan = Vulkan::new(
         "My Application",
-        &["VK_LAYER_KHRONOS_validation"],
-        &["VK_EXT_debug_utils"],
+        &[],
+        &[DebugUtils::name().to_str().unwrap()],
     );
 
     let physical_devices = vulkan.physical_devices();
-    let graphics_device_index = physical_devices
+    let compute_device_index = physical_devices
         .iter()
         .position(|device| device.supports_compute());
 
-    let logical_device = if let Some(index) = graphics_device_index {
+    let logical_device = if let Some(index) = compute_device_index {
         physical_devices[index].device_context(&[])
     } else {
         panic!()

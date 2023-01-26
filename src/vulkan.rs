@@ -2,7 +2,8 @@ use ash::extensions::ext::MetalSurface;
 use ash::vk::{
     make_api_version, ApplicationInfo, Bool32, DebugUtilsMessageSeverityFlagsEXT,
     DebugUtilsMessageTypeFlagsEXT, DebugUtilsMessengerCallbackDataEXT,
-    DebugUtilsMessengerCreateInfoEXT, DebugUtilsMessengerEXT, InstanceCreateInfo, QueueFlags,
+    DebugUtilsMessengerCreateInfoEXT, DebugUtilsMessengerEXT, InstanceCreateFlags,
+    InstanceCreateInfo, KhrGetPhysicalDeviceProperties2Fn, KhrPortabilityEnumerationFn, QueueFlags,
     FALSE,
 };
 pub use ash::{Entry, Instance};
@@ -69,22 +70,35 @@ impl Vulkan {
             .application_version(0)
             .engine_name(&c_name)
             .engine_version(0)
-            .api_version(make_api_version(0, 1, 2, 0));
+            .api_version(make_api_version(0, 1, 3, 0));
 
         let layers_names_raw: Vec<*const i8> = layers
             .iter()
             .map(|layer_name| layer_name.as_ptr() as _)
             .collect();
 
-        let extension_names_raw = extensions
+        let mut extension_names_raw = extensions
             .iter()
             .map(|ext| ext.as_ptr() as _)
             .collect::<Vec<_>>();
 
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        {
+            extension_names_raw.push(KhrPortabilityEnumerationFn::name().as_ptr());
+            // Enabling this extension is a requirement when using `VK_KHR_portability_subset`
+            extension_names_raw.push(KhrGetPhysicalDeviceProperties2Fn::name().as_ptr());
+        }
+
+        let mut flags = InstanceCreateFlags::default();
+        // if cfg!(macos) {
+        flags |= InstanceCreateFlags::ENUMERATE_PORTABILITY_KHR;
+        // }
+
         let create_info = InstanceCreateInfo::builder()
             .application_info(&appinfo)
             .enabled_layer_names(&layers_names_raw)
-            .enabled_extension_names(&extension_names_raw);
+            .enabled_extension_names(&extension_names_raw)
+            .flags(flags);
 
         unsafe {
             let library = Entry::load().unwrap();
