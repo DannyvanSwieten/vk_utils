@@ -1,17 +1,13 @@
+use byteorder::ReadBytesExt;
 use spirv_reflect::{
     types::{
-        ReflectDescriptorBinding, ReflectDescriptorBindingSet, ReflectDescriptorSet,
+        ReflectBlockVariable, ReflectDescriptorBinding, ReflectDescriptorSet,
         ReflectInterfaceVariable,
     },
     ShaderModule,
 };
-use std::path::Path;
-use std::rc::Rc;
-
-use byteorder::ReadBytesExt;
 use std::fs::File;
-
-use crate::device_context::DeviceContext;
+use std::path::Path;
 
 use shaderc::{CompilationArtifact, Compiler, ShaderKind};
 
@@ -54,6 +50,13 @@ impl ShaderReflection {
     pub fn bindings(&self) -> Option<Vec<ReflectDescriptorBinding>> {
         match self.module.enumerate_descriptor_bindings(None) {
             Ok(bindings) => Some(bindings),
+            Err(_) => None,
+        }
+    }
+
+    pub fn push_constants(&self) -> Option<Vec<ReflectBlockVariable>> {
+        match self.module.enumerate_push_constant_blocks(None) {
+            Ok(push_constant_blocks) => Some(push_constant_blocks),
             Err(_) => None,
         }
     }
