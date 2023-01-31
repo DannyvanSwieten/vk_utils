@@ -5,7 +5,7 @@ use crate::memory::memory_type_index;
 
 use ash::vk::{
     Buffer, BufferCreateInfo, BufferDeviceAddressInfo, BufferUsageFlags, DeviceAddress,
-    DeviceMemory, MappedMemoryRange, MemoryAllocateFlagsInfo,
+    DeviceMemory, MappedMemoryRange, MemoryAllocateFlags, MemoryAllocateFlagsInfo,
     MemoryAllocateInfo, MemoryMapFlags, MemoryPropertyFlags, SharingMode,
 };
 pub struct BufferResource {
@@ -121,12 +121,13 @@ impl BufferResource {
                 property_flags,
             );
 
-            let mut flags = MemoryAllocateFlagsInfo::builder()
-                // .flags(MemoryAllocateFlags::DEVICE_ADDRESS_KHR)
-                .build();
+            let mut allocate_flags = MemoryAllocateFlagsInfo::builder();
+            if usage.contains(BufferUsageFlags::SHADER_DEVICE_ADDRESS) {
+                allocate_flags = allocate_flags.flags(MemoryAllocateFlags::DEVICE_ADDRESS)
+            }
             if let Some(type_index) = type_index {
                 let allocation_info = MemoryAllocateInfo::builder()
-                    .push_next(&mut flags)
+                    .push_next(&mut allocate_flags)
                     .memory_type_index(type_index)
                     .allocation_size(memory_requirements.size);
                 let memory = device
