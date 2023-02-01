@@ -82,17 +82,14 @@ impl Vulkan {
             .map(|ext| ext.as_ptr() as _)
             .collect::<Vec<_>>();
 
+        let mut flags = InstanceCreateFlags::default();
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         {
+            flags |= InstanceCreateFlags::ENUMERATE_PORTABILITY_KHR;
             extension_names_raw.push(KhrPortabilityEnumerationFn::name().as_ptr());
             // Enabling this extension is a requirement when using `VK_KHR_portability_subset`
             extension_names_raw.push(KhrGetPhysicalDeviceProperties2Fn::name().as_ptr());
         }
-
-        let mut flags = InstanceCreateFlags::default();
-        // if cfg!(macos) {
-        flags |= InstanceCreateFlags::ENUMERATE_PORTABILITY_KHR;
-        // }
 
         let create_info = InstanceCreateInfo::builder()
             .application_info(&appinfo)
