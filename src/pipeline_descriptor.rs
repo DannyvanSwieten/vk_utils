@@ -1,15 +1,11 @@
-use std::{
-    collections::HashMap,
-    ffi::{CString},
-    path::Path,
-    rc::Rc,
-};
+use std::{collections::HashMap, ffi::CString, path::Path, rc::Rc};
 
 use ash::vk::{
     ComputePipelineCreateInfo, DescriptorBufferInfo, DescriptorImageInfo, DescriptorPoolCreateInfo,
     DescriptorPoolSize, DescriptorSet, DescriptorSetAllocateInfo, DescriptorSetLayout,
     DescriptorSetLayoutBinding, DescriptorSetLayoutCreateInfo, DescriptorType, Pipeline,
-    PipelineCache, PipelineLayout, PipelineLayoutCreateInfo, PipelineShaderStageCreateInfo, ShaderModuleCreateInfo, ShaderStageFlags, WriteDescriptorSet,
+    PipelineCache, PipelineLayout, PipelineLayoutCreateInfo, PipelineShaderStageCreateInfo,
+    ShaderModuleCreateInfo, ShaderStageFlags, WriteDescriptorSet,
 };
 use shaderc::ShaderKind;
 use spirv_reflect::types::ReflectDescriptorType;
@@ -139,12 +135,17 @@ impl ComputePipeline {
         device: Rc<DeviceContext>,
         max_frames_in_flight: u32,
         entry_point: &str,
+        explicit_bindings: Option<HashMap<u32, Vec<DescriptorSetLayoutBinding>>>,
     ) -> Option<Self> {
         let src = std::fs::read_to_string(path);
         match src {
-            Ok(src) => {
-                Self::new_from_source_string(device, max_frames_in_flight, &src, entry_point)
-            }
+            Ok(src) => Self::new_from_source_string(
+                device,
+                max_frames_in_flight,
+                &src,
+                entry_point,
+                explicit_bindings,
+            ),
             Err(_) => None,
         }
     }
@@ -154,11 +155,22 @@ impl ComputePipeline {
         max_frames_in_flight: u32,
         src: &str,
         entry_point: &str,
+        explicit_bindings: Option<HashMap<u32, Vec<DescriptorSetLayoutBinding>>>,
     ) -> Option<Self> {
         let result = ShaderCompiler::compile_string(src, ShaderKind::Compute, "", entry_point);
         let this = if !result.failed() {
             let reflection = result.reflect();
-            let descriptor_set_bindings = Self::create_descriptor_set_bindings(&reflection);
+            let mut descriptor_set_bindings = Self::create_descriptor_set_bindings(&reflection);
+            if let Some(explicit_bindings) = explicit_bindings {
+                for (index, bindings) in explicit_bindings {
+                    for binding in bindings {
+                        descriptor_set_bindings
+                            .get_mut(&index)
+                            .unwrap()
+                            .push(binding)
+                    }
+                }
+            }
             let mut layouts = vec![DescriptorSetLayout::default(); descriptor_set_bindings.len()];
             let mut pool_sizes = Vec::new();
             for (index, set) in descriptor_set_bindings {

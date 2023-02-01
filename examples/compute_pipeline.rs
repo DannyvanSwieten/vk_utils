@@ -37,7 +37,8 @@ pub fn main() {
     ";
 
     let logical_device = Rc::new(logical_device);
-    let pipeline = ComputePipeline::new_from_source_string(logical_device.clone(), 1, src, "main");
+    let pipeline =
+        ComputePipeline::new_from_source_string(logical_device.clone(), 1, src, "main", None);
     let result = if let Some(mut pipeline) = pipeline {
         let data: Vec<i32> = (0..10).collect();
         let buffer_size = std::mem::size_of::<i32>() * data.len();
