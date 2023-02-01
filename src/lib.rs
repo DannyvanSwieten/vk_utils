@@ -20,5 +20,5 @@ pub use ash::extensions::ext::DebugUtils;
 pub use ash::vk::{
     BufferUsageFlags, DescriptorSetLayoutBinding, DescriptorType, Format, ImageLayout,
     ImageUsageFlags, MemoryPropertyFlags, PhysicalDeviceFeatures2KHR,
-    PhysicalDeviceVulkan12Features, QueueFlags,
+    PhysicalDeviceVulkan12Features, QueueFlags, ShaderStageFlags,
 };
