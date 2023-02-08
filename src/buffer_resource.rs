@@ -49,7 +49,7 @@ impl BufferResource {
                 .map_memory(
                     self.memory,
                     offset,
-                    size_of::<T>() as u64 * data.len() as u64,
+                    self.size - offset,
                     MemoryMapFlags::default(),
                 )
                 .expect("Memory map failed on buffer");
@@ -60,7 +60,8 @@ impl BufferResource {
 
             let ranges = [*MappedMemoryRange::builder()
                 .memory(self.memory)
-                .size(self.size - offset)];
+                .size(self.size - offset)
+                .offset(offset)];
 
             self.device
                 .handle()
