@@ -46,22 +46,16 @@ impl BufferResource {
             let ptr = self
                 .device
                 .handle()
-                .map_memory(
-                    self.memory,
-                    offset,
-                    self.size - offset,
-                    MemoryMapFlags::default(),
-                )
+                .map_memory(self.memory, offset, self.size, MemoryMapFlags::default())
                 .expect("Memory map failed on buffer");
 
             let size = data.len();
 
-            std::ptr::copy_nonoverlapping(data.as_ptr(), ptr as _, size);
+            std::ptr::copy_nonoverlapping(data.as_ptr(), ptr.offset(offset as _) as _, size);
 
             let ranges = [*MappedMemoryRange::builder()
                 .memory(self.memory)
-                .size(self.size - offset)
-                .offset(offset)];
+                .size(self.size)];
 
             self.device
                 .handle()
