@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{mem::size_of, rc::Rc};
 
 use crate::device_context::DeviceContext;
 use crate::memory::memory_type_index;
@@ -23,6 +23,35 @@ impl BufferResource {
                 .device
                 .handle()
                 .map_memory(self.memory, 0, self.size, MemoryMapFlags::default())
+                .expect("Memory map failed on buffer");
+
+            let size = self.content_size as usize / std::mem::size_of::<T>();
+
+            std::ptr::copy_nonoverlapping(data.as_ptr(), ptr as _, size);
+
+            let ranges = [*MappedMemoryRange::builder()
+                .memory(self.memory)
+                .size(self.size)];
+
+            self.device
+                .handle()
+                .flush_mapped_memory_ranges(&ranges)
+                .expect("Memory flush failed");
+            self.device.handle().unmap_memory(self.memory);
+        }
+    }
+
+    pub fn upload_at<T>(&mut self, offset: u64, data: &[T]) {
+        unsafe {
+            let ptr = self
+                .device
+                .handle()
+                .map_memory(
+                    self.memory,
+                    offset,
+                    size_of::<T>() as u64 * data.len() as u64,
+                    MemoryMapFlags::default(),
+                )
                 .expect("Memory map failed on buffer");
 
             let size = self.content_size as usize / std::mem::size_of::<T>();
