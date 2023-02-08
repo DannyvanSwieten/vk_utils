@@ -25,7 +25,7 @@ impl BufferResource {
                 .map_memory(self.memory, 0, self.size, MemoryMapFlags::default())
                 .expect("Memory map failed on buffer");
 
-            let size = self.content_size as usize / std::mem::size_of::<T>();
+            let size = data.len() / std::mem::size_of::<T>();
 
             std::ptr::copy_nonoverlapping(data.as_ptr(), ptr as _, size);
 
