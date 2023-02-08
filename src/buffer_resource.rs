@@ -60,7 +60,7 @@ impl BufferResource {
 
             let ranges = [*MappedMemoryRange::builder()
                 .memory(self.memory)
-                .size(self.size)];
+                .size(self.size - offset)];
 
             self.device
                 .handle()
