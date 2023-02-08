@@ -46,7 +46,7 @@ impl BufferResource {
             let ptr = self
                 .device
                 .handle()
-                .map_memory(self.memory, offset, self.size, MemoryMapFlags::default())
+                .map_memory(self.memory, 0, self.size, MemoryMapFlags::default())
                 .expect("Memory map failed on buffer");
 
             let size = data.len();
