@@ -163,11 +163,13 @@ impl ComputePipeline {
             let mut descriptor_set_bindings = Self::create_descriptor_set_bindings(&reflection);
             if let Some(explicit_bindings) = explicit_bindings {
                 for (index, bindings) in explicit_bindings {
-                    for binding in bindings {
+                    if descriptor_set_bindings.contains_key(&index) {
                         descriptor_set_bindings
                             .get_mut(&index)
                             .unwrap()
-                            .push(binding)
+                            .extend(bindings.iter())
+                    } else {
+                        descriptor_set_bindings.insert(index, bindings);
                     }
                 }
             }
