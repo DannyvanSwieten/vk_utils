@@ -17,6 +17,19 @@ pub struct BufferResource {
 }
 
 impl BufferResource {
+    pub fn flush_all(&self) {
+        let ranges = [*MappedMemoryRange::builder()
+            .memory(self.memory)
+            .size(self.size)];
+        unsafe {
+            self.device
+                .handle()
+                .flush_mapped_memory_ranges(&ranges)
+                .expect("Memory flush failed");
+            self.device.handle().unmap_memory(self.memory);
+        }
+    }
+
     pub fn upload<T>(&mut self, data: &[T]) {
         unsafe {
             let ptr = self
@@ -130,6 +143,14 @@ impl BufferResource {
 
             std::slice::from_raw_parts(ptr as *const T, self.content_size as usize / size_of::<T>())
         }
+    }
+
+    pub fn for_each<T, F>(&self, f: F)
+    where
+        F: Fn(&T),
+    {
+        self.read().iter().for_each(f);
+        self.flush_all();
     }
 }
 
