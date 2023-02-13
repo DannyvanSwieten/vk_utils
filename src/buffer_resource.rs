@@ -119,6 +119,18 @@ impl BufferResource {
             output
         }
     }
+
+    pub fn read<T>(&self) -> &[T] {
+        unsafe {
+            let ptr = self
+                .device
+                .handle()
+                .map_memory(self.memory, 0, self.size, MemoryMapFlags::default())
+                .expect("Memory map failed on buffer") as *mut T;
+
+            std::slice::from_raw_parts(ptr as *const T, self.content_size as usize / size_of::<T>())
+        }
+    }
 }
 
 impl BufferResource {
