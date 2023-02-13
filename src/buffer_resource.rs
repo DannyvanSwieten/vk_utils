@@ -136,14 +136,14 @@ impl BufferResource {
 impl BufferResource {
     pub fn new(
         device_context: Rc<DeviceContext>,
-        size: u64,
+        size: usize,
         property_flags: MemoryPropertyFlags,
         usage: BufferUsageFlags,
     ) -> Self {
         unsafe {
             let device = device_context.handle();
             let buffer_info = BufferCreateInfo::builder()
-                .size(size)
+                .size(size as _)
                 .sharing_mode(SharingMode::EXCLUSIVE)
                 .usage(usage);
 
@@ -179,7 +179,7 @@ impl BufferResource {
                     buffer,
                     memory,
                     size: memory_requirements.size,
-                    content_size: size,
+                    content_size: size as _,
                 }
             } else {
                 panic!()
@@ -187,7 +187,7 @@ impl BufferResource {
         }
     }
 
-    pub fn new_host_visible_storage(device: Rc<DeviceContext>, size: u64) -> Self {
+    pub fn new_host_visible_storage(device: Rc<DeviceContext>, size: usize) -> Self {
         Self::new(
             device,
             size,
