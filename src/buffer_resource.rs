@@ -187,6 +187,20 @@ impl BufferResource {
         }
     }
 
+    pub fn new_host_visible_storage(device: Rc<DeviceContext>, size: u64) -> Self {
+        Self::new(
+            device,
+            size,
+            MemoryPropertyFlags::HOST_VISIBLE,
+            BufferUsageFlags::STORAGE_BUFFER | BufferUsageFlags::SHADER_DEVICE_ADDRESS,
+        )
+    }
+
+    pub fn with_data<T>(mut self, data: &[T]) -> Self {
+        self.upload(data);
+        self
+    }
+
     pub fn size(&self) -> u64 {
         self.size
     }
