@@ -77,10 +77,11 @@ impl Vulkan {
             .engine_version(0)
             .api_version(make_api_version(0, 1, 3, 0));
 
-        let layers_names_raw: Vec<*const i8> = layers
+        let extension_names_raw = extensions
             .iter()
-            .map(|layer_name| layer_name.as_ptr() as _)
-            .collect();
+            .map(|s| s.to_string())
+            .map(|ext| ext.as_ptr() as _)
+            .collect::<Vec<_>>();
 
         let mut flags = InstanceCreateFlags::default();
         #[cfg(any(target_os = "macos", target_os = "ios"))]
