@@ -64,6 +64,11 @@ pub struct Vulkan {
 
 impl Vulkan {
     pub fn new(name: &str, layers: &[&str], extensions: &[&str]) -> Self {
+        let layers_names_raw: Vec<*const i8> = layers
+            .iter()
+            .map(|s| s.to_string())
+            .map(|layer_name| layer_name.as_ptr() as _)
+            .collect();
         let c_name = CString::new(name).unwrap();
         let appinfo = ApplicationInfo::builder()
             .application_name(&c_name)
@@ -76,11 +81,6 @@ impl Vulkan {
             .iter()
             .map(|layer_name| layer_name.as_ptr() as _)
             .collect();
-
-        let mut extension_names_raw = extensions
-            .iter()
-            .map(|ext| ext.as_ptr() as _)
-            .collect::<Vec<_>>();
 
         let mut flags = InstanceCreateFlags::default();
         #[cfg(any(target_os = "macos", target_os = "ios"))]
