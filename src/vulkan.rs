@@ -100,6 +100,15 @@ impl Vulkan {
 
         unsafe {
             let library = Entry::load().unwrap();
+            for layer in library
+                .enumerate_instance_layer_properties()
+                .expect("Layer enumeration failed")
+            {
+                println!(
+                    "{}",
+                    String::from_raw_parts(layer.layer_name.as_ptr() as _, 255, 255)
+                )
+            }
             let instance: Instance = library
                 .create_instance(&create_info, None)
                 .expect("Instance creation error");
