@@ -64,11 +64,9 @@ pub struct Vulkan {
 
 impl Vulkan {
     pub fn new(name: &str, layers: &[&str], extensions: &[&str]) -> Self {
-        let layers_names_raw: Vec<*const i8> = layers
-            .iter()
-            .map(|s| s.to_string())
-            .map(|layer_name| layer_name.as_ptr() as _)
-            .collect();
+        let layers_names: Vec<String> = layers.iter().map(|s| s.to_string() + "\0").collect();
+        let layers_names_raw: Vec<*const i8> =
+            layers_names.iter().map(|s| s.as_ptr() as _).collect();
         let c_name = CString::new(name).unwrap();
         let appinfo = ApplicationInfo::builder()
             .application_name(&c_name)
@@ -77,11 +75,13 @@ impl Vulkan {
             .engine_version(0)
             .api_version(make_api_version(0, 1, 3, 0));
 
-        let extension_names_raw = extensions
+        let extension_names = extensions
             .iter()
-            .map(|s| s.to_string())
-            .map(|ext| ext.as_ptr() as _)
+            .map(|s| s.to_string() + "\0")
             .collect::<Vec<_>>();
+
+        let extension_names_raw: Vec<*const i8> =
+            extension_names.iter().map(|e| e.as_ptr() as _).collect();
 
         let mut flags = InstanceCreateFlags::default();
         #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -100,15 +100,6 @@ impl Vulkan {
 
         unsafe {
             let library = Entry::load().unwrap();
-            for layer in library
-                .enumerate_instance_layer_properties()
-                .expect("Layer enumeration failed")
-            {
-                println!(
-                    "{}",
-                    String::from_raw_parts(layer.layer_name.as_ptr() as _, 255, 255)
-                )
-            }
             let instance: Instance = library
                 .create_instance(&create_info, None)
                 .expect("Instance creation error");
