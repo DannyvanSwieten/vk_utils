@@ -175,7 +175,7 @@ impl ComputePipeline {
             }
             let mut layouts = vec![DescriptorSetLayout::default(); descriptor_set_bindings.len()];
             let mut pool_sizes = Vec::new();
-            for (index, set) in descriptor_set_bindings {
+            for (index, set) in &descriptor_set_bindings {
                 let mut builder = DescriptorSetLayoutCreateInfo::builder();
                 builder = builder.bindings(&set);
                 let layout = unsafe {
@@ -185,7 +185,7 @@ impl ComputePipeline {
                         .expect("Creating descriptorset layout failed: {}")
                 };
 
-                layouts[index as usize] = layout;
+                layouts[*index as usize] = layout;
 
                 for binding in set {
                     let size = DescriptorPoolSize::builder()
@@ -234,7 +234,7 @@ impl ComputePipeline {
 
             let pool_info = DescriptorPoolCreateInfo::builder()
                 .pool_sizes(&pool_sizes)
-                .max_sets(max_frames_in_flight);
+                .max_sets(max_frames_in_flight * descriptor_set_bindings.len() as u32);
 
             let pool = unsafe {
                 device
