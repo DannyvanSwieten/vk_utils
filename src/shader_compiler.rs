@@ -9,7 +9,7 @@ use spirv_reflect::{
 use std::fs::File;
 use std::path::Path;
 
-use shaderc::{CompilationArtifact, Compiler, ShaderKind};
+use shaderc::{CompilationArtifact, CompileOptions, Compiler, OptimizationLevel, ShaderKind};
 
 pub fn load_spirv(path: &str) -> Vec<u32> {
     let file = File::open(path).expect(&(String::from("File not found at: ") + path));
@@ -131,6 +131,9 @@ impl ShaderCompiler {
     ) -> CompilationResult {
         let compiler = Compiler::new();
         if let Some(compiler) = compiler {
+            let mut options = CompileOptions::new().unwrap();
+            options.set_target_spirv(shaderc::SpirvVersion::V1_6);
+            options.set_optimization_level(OptimizationLevel::Performance);
             let result = compiler.compile_into_spirv(src, kind, origin, entry_point, None);
             CompilationResult { result }
         } else {
