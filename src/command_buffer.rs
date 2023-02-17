@@ -5,7 +5,7 @@ use ash::vk::{
     CommandBufferBeginInfo, DependencyFlags, DescriptorSet, Extent2D, Extent3D, FenceCreateInfo,
     Filter, Framebuffer, ImageAspectFlags, ImageBlit, ImageLayout, ImageMemoryBarrier,
     ImageSubresourceLayers, ImageSubresourceRange, Offset3D, PipelineBindPoint, PipelineLayout,
-    PipelineStageFlags, Rect2D, RenderPassBeginInfo, SubmitInfo, SubpassContents,
+    PipelineStageFlags, Rect2D, RenderPassBeginInfo, ShaderStageFlags, SubmitInfo, SubpassContents,
 };
 
 use crate::buffer_resource::BufferResource;
@@ -391,5 +391,22 @@ impl CommandBuffer {
 
     pub fn end_render_pass(&mut self) {
         unsafe { self.device.handle().cmd_end_render_pass(self.handle()) }
+    }
+
+    pub fn push_compute_constants<T: Sized + Copy>(
+        &mut self,
+        pipeline: &ComputePipeline,
+        constants: &T,
+    ) {
+        let array = [*constants];
+        unsafe {
+            self.device.handle().cmd_push_constants(
+                self.handle(),
+                *pipeline.layout(),
+                ShaderStageFlags::COMPUTE,
+                0,
+                std::slice::from_raw_parts(array.as_ptr() as *const u8, std::mem::size_of::<T>()),
+            )
+        }
     }
 }
