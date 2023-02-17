@@ -129,6 +129,8 @@ impl BufferResource {
                 output.push(*ptr.offset(i) as T);
             }
 
+            self.device.handle().unmap_memory(self.memory);
+
             output
         }
     }
@@ -151,6 +153,9 @@ impl BufferResource {
     {
         self.read().iter().for_each(f);
         self.flush_all();
+        unsafe {
+            self.device.handle().unmap_memory(self.memory);
+        }
     }
 }
 
