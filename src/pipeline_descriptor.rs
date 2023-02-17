@@ -5,7 +5,7 @@ use ash::vk::{
     DescriptorPoolSize, DescriptorSet, DescriptorSetAllocateInfo, DescriptorSetLayout,
     DescriptorSetLayoutBinding, DescriptorSetLayoutCreateInfo, DescriptorType, Pipeline,
     PipelineCache, PipelineLayout, PipelineLayoutCreateInfo, PipelineShaderStageCreateInfo,
-    ShaderModuleCreateInfo, ShaderStageFlags, WriteDescriptorSet,
+    PushConstantRange, ShaderModuleCreateInfo, ShaderStageFlags, WriteDescriptorSet,
 };
 use shaderc::ShaderKind;
 use spirv_reflect::types::ReflectDescriptorType;
@@ -175,6 +175,19 @@ impl ComputePipeline {
                     }
                 }
             }
+
+            let mut constant_ranges = Vec::new();
+            if let Some(push_blocks) = reflection.push_constants() {
+                for block in push_blocks {
+                    constant_ranges.push(
+                        *PushConstantRange::builder()
+                            .size(block.size)
+                            .offset(block.offset)
+                            .stage_flags(ShaderStageFlags::COMPUTE),
+                    );
+                }
+            }
+
             let mut layouts = vec![DescriptorSetLayout::default(); descriptor_set_bindings.len()];
             let mut pool_sizes = Vec::new();
             for (index, set) in &descriptor_set_bindings {
@@ -197,7 +210,9 @@ impl ComputePipeline {
                 }
             }
 
-            let pipeline_info_builder = PipelineLayoutCreateInfo::builder().set_layouts(&layouts);
+            let pipeline_info_builder = PipelineLayoutCreateInfo::builder()
+                .set_layouts(&layouts)
+                .push_constant_ranges(&constant_ranges);
             let pipeline_layout = unsafe {
                 device
                     .handle()
