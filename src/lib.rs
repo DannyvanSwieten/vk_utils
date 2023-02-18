@@ -18,7 +18,7 @@ pub mod wait_handle;
 
 pub use ash::extensions::ext::DebugUtils;
 pub use ash::vk::{
-    BufferUsageFlags, DescriptorSetLayoutBinding, DescriptorType, Format, ImageLayout,
+    AccessFlags, BufferUsageFlags, DescriptorSetLayoutBinding, DescriptorType, Format, ImageLayout,
     ImageUsageFlags, MemoryPropertyFlags, PhysicalDeviceFeatures2KHR,
     PhysicalDeviceVulkan12Features, QueueFlags, ShaderStageFlags,
 };
