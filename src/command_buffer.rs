@@ -1,11 +1,12 @@
 use std::rc::Rc;
 
 use ash::vk::{
-    Buffer, BufferImageCopy, ClearColorValue, ClearValue, CommandBufferAllocateInfo,
-    CommandBufferBeginInfo, DependencyFlags, DescriptorSet, Extent2D, Extent3D, FenceCreateInfo,
-    Filter, Framebuffer, ImageAspectFlags, ImageBlit, ImageLayout, ImageMemoryBarrier,
-    ImageSubresourceLayers, ImageSubresourceRange, Offset3D, PipelineBindPoint, PipelineLayout,
-    PipelineStageFlags, Rect2D, RenderPassBeginInfo, ShaderStageFlags, SubmitInfo, SubpassContents,
+    AccessFlags, Buffer, BufferImageCopy, BufferMemoryBarrier, ClearColorValue, ClearValue,
+    CommandBufferAllocateInfo, CommandBufferBeginInfo, DependencyFlags, DescriptorSet, Extent2D,
+    Extent3D, FenceCreateInfo, Filter, Framebuffer, ImageAspectFlags, ImageBlit, ImageLayout,
+    ImageMemoryBarrier, ImageSubresourceLayers, ImageSubresourceRange, Offset3D, PipelineBindPoint,
+    PipelineLayout, PipelineStageFlags, Rect2D, RenderPassBeginInfo, ShaderStageFlags, SubmitInfo,
+    SubpassContents,
 };
 
 use crate::buffer_resource::BufferResource;
@@ -185,6 +186,33 @@ impl CommandBuffer {
 
     pub(crate) fn device(&self) -> Rc<DeviceContext> {
         self.device.clone()
+    }
+
+    pub fn buffer_resource_barrier(
+        &mut self,
+        buffer: &BufferResource,
+        producer: PipelineStageFlags,
+        consumer: PipelineStageFlags,
+        source: AccessFlags,
+        destination: AccessFlags,
+    ) {
+        let barrier = BufferMemoryBarrier::builder()
+            .buffer(buffer.buffer)
+            .size(buffer.size())
+            .src_access_mask(source)
+            .dst_access_mask(destination);
+
+        unsafe {
+            self.device.handle().cmd_pipeline_barrier(
+                self.handle(),
+                producer,
+                consumer,
+                DependencyFlags::BY_REGION,
+                &[],
+                &[*barrier],
+                &[],
+            );
+        }
     }
 
     pub fn image_resource_transition(
