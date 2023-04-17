@@ -425,6 +425,7 @@ impl CommandBuffer {
     pub fn push_compute_constants<T: Sized + Copy>(
         &mut self,
         pipeline: &ComputePipeline,
+        offset: u32,
         constants: &T,
     ) {
         let array = [*constants];
