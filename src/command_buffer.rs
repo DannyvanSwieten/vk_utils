@@ -434,7 +434,7 @@ impl CommandBuffer {
                 self.handle(),
                 *pipeline.layout(),
                 ShaderStageFlags::COMPUTE,
-                0,
+                offset,
                 std::slice::from_raw_parts(array.as_ptr() as *const u8, std::mem::size_of::<T>()),
             )
         }
