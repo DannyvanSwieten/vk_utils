@@ -80,7 +80,7 @@ impl Vulkan {
             .map(|s| s.to_string() + "\0")
             .collect::<Vec<_>>();
 
-        let extension_names_raw: Vec<*const i8> =
+        let mut extension_names_raw: Vec<*const i8> =
             extension_names.iter().map(|e| e.as_ptr() as _).collect();
 
         let mut flags = InstanceCreateFlags::default();
