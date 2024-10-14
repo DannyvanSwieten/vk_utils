@@ -1,3 +1,4 @@
+use ash::ext::debug_utils;
 use ash::vk::{BufferUsageFlags, MemoryPropertyFlags, QueueFlags};
 use std::rc::Rc;
 use vk_utils::buffer_resource::BufferResource;
@@ -5,13 +6,12 @@ use vk_utils::command_buffer::CommandBuffer;
 use vk_utils::pipeline_descriptor::ComputePipeline;
 use vk_utils::queue::CommandQueue;
 use vk_utils::vulkan::Vulkan;
-use vk_utils::DebugUtils;
 
 pub fn main() {
     let vulkan = Vulkan::new(
         "My Application",
         &[],
-        &[DebugUtils::name().to_str().unwrap()],
+        &[debug_utils::NAME.to_str().unwrap()],
     );
 
     let physical_devices = vulkan.physical_devices();

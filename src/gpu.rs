@@ -1,8 +1,7 @@
 use ash::vk::{
-    DeviceCreateInfo, DeviceCreateInfoBuilder, ExtensionProperties, PhysicalDevice,
-    PhysicalDeviceFeatures, PhysicalDeviceLimits, PhysicalDeviceMemoryProperties2,
-    PhysicalDeviceProperties, PhysicalDeviceProperties2, PhysicalDeviceProperties2Builder,
-    PhysicalDeviceType, QueueFamilyProperties, QueueFlags,
+    DeviceCreateInfo, ExtensionProperties, PhysicalDevice, PhysicalDeviceFeatures,
+    PhysicalDeviceLimits, PhysicalDeviceMemoryProperties2, PhysicalDeviceProperties,
+    PhysicalDeviceProperties2, PhysicalDeviceType, QueueFamilyProperties, QueueFlags,
 };
 
 use crate::device_context::DeviceContext;
@@ -15,7 +14,6 @@ pub struct Gpu {
     physical_device: PhysicalDevice,
     features: PhysicalDeviceFeatures,
     properties: PhysicalDeviceProperties,
-    memory_properties: PhysicalDeviceMemoryProperties2,
     queue_family_properties: Vec<QueueFamilyProperties>,
 }
 
@@ -42,28 +40,27 @@ impl Gpu {
                 queue_family_properties: vulkan
                     .vk_instance()
                     .get_physical_device_queue_family_properties(*physical_device),
-                memory_properties,
             }
         }
     }
 
-    pub fn device_context_builder<'a, F>(
-        &'a self,
+    pub fn device_context_builder<'b, F>(
+        &self,
         extensions: &[&str],
         builder_function: F,
     ) -> DeviceContext
     where
-        F: FnOnce(DeviceCreateInfoBuilder<'a>) -> DeviceCreateInfoBuilder<'a>,
+        F: FnOnce(DeviceCreateInfo<'b>) -> DeviceCreateInfo<'b>,
     {
         DeviceContext::new(
             self,
             extensions,
-            builder_function(DeviceCreateInfo::builder()),
+            builder_function(DeviceCreateInfo::default()),
         )
     }
 
-    pub fn device_context<'a>(&'a self, extensions: &[&str]) -> DeviceContext {
-        DeviceContext::new(self, extensions, DeviceCreateInfo::builder())
+    pub fn device_context<'b>(&self, extensions: &[&str]) -> DeviceContext {
+        DeviceContext::new(self, extensions, DeviceCreateInfo::default())
     }
 
     pub(crate) fn family_type_index(&self, flags: QueueFlags) -> Option<u32> {
@@ -125,18 +122,18 @@ impl Gpu {
         }
     }
 
-    pub fn extension_properties<'a, F>(&self, builder_function: F) -> PhysicalDeviceProperties2
+    pub fn extension_properties<'b, F>(&self, builder_function: F) -> PhysicalDeviceProperties
     where
-        F: FnOnce(PhysicalDeviceProperties2Builder<'a>) -> PhysicalDeviceProperties2Builder<'a>,
+        F: FnOnce(PhysicalDeviceProperties2<'b>) -> PhysicalDeviceProperties2<'b>,
     {
-        let mut properties = builder_function(PhysicalDeviceProperties2::builder()).build();
+        let mut properties = builder_function(PhysicalDeviceProperties2::default());
         unsafe {
             self.vulkan()
                 .vk_instance()
                 .get_physical_device_properties2(self.physical_device, &mut properties);
         }
 
-        properties
+        properties.properties
     }
     pub fn supports_graphics(&self) -> bool {
         for queue_info in self.queue_family_properties.iter() {
@@ -172,7 +169,11 @@ impl Gpu {
         &self.vulkan
     }
 
-    pub fn memory_properties(&self) -> &PhysicalDeviceMemoryProperties2 {
-        &self.memory_properties
+    pub fn memory_properties(&self, properties: &mut PhysicalDeviceMemoryProperties2) {
+        unsafe {
+            self.vulkan
+                .vk_instance()
+                .get_physical_device_memory_properties2(*self.vk_physical_device(), properties)
+        };
     }
 }

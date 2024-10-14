@@ -9,7 +9,7 @@ use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 
 use ash::ext::{debug_utils, metal_surface};
-use ash::khr::{get_physical_device_properties2, portability_enumeration, win32_surface};
+use ash::khr::win32_surface;
 
 use crate::gpu::Gpu;
 
@@ -79,10 +79,10 @@ impl Vulkan {
             .map(|s| s.to_string() + "\0")
             .collect::<Vec<_>>();
 
-        let mut extension_names_raw: Vec<*const i8> =
+        let extension_names_raw: Vec<*const i8> =
             extension_names.iter().map(|e| e.as_ptr() as _).collect();
 
-        let mut flags = InstanceCreateFlags::default();
+        let flags = InstanceCreateFlags::default();
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         {
             flags |= InstanceCreateFlags::ENUMERATE_PORTABILITY_KHR;
@@ -112,15 +112,23 @@ impl Vulkan {
                 .message_type(DebugUtilsMessageTypeFlagsEXT::VALIDATION)
                 .pfn_user_callback(Some(vulkan_debug_callback));
 
-            let debug_utils_loader = debug_utils::Instance::new(&library, &instance);
-            let debug_callback =
+            if layers.contains(&"VK_LAYER_KHRONOS_validation") {
+                println!("Validation layer enabled");
+            }
+
+            let debug_callback = if extension_names_raw.contains(&debug_utils::NAME.as_ptr()) {
+                println!("Debug utils enabled");
+                let debug_utils_loader = debug_utils::Instance::new(&library, &instance);
                 match debug_utils_loader.create_debug_utils_messenger(&debug_info, None) {
                     Ok(succes) => Some(succes),
                     Err(error) => {
                         println!("{}", error);
                         None
                     }
-                };
+                }
+            } else {
+                None
+            };
 
             Self {
                 _debug_callback: debug_callback,

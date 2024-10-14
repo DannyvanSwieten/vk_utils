@@ -10,17 +10,12 @@ pub struct DeviceContext {
 unsafe impl Send for DeviceContext {}
 
 impl DeviceContext {
-    pub(crate) fn new(
-        gpu: &Gpu,
-        extensions: &[&str],
-        builder: DeviceCreateInfo::default(),
-    ) -> Self {
+    pub(crate) fn new(gpu: &Gpu, extensions: &[&str], builder: DeviceCreateInfo) -> Self {
         let priorities: [f32; 1] = [1.];
         if let Some(index) = gpu.family_type_index(QueueFlags::GRAPHICS) {
             let queue_info = [DeviceQueueCreateInfo::default()
                 .queue_priorities(&priorities)
-                .queue_family_index(index)
-                .build()];
+                .queue_family_index(index)];
 
             let extension_names_raw: Vec<*const i8> = extensions
                 .iter()
@@ -43,7 +38,7 @@ impl DeviceContext {
                 }
             }
         } else {
-            panic!()
+            panic!("No queue family found");
         }
     }
 

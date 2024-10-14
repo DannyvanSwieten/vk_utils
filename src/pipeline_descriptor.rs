@@ -39,39 +39,39 @@ impl ComputePipeline {
     }
 
     pub fn set_storage_buffer(&mut self, set: usize, binding: usize, buffer: &BufferResource) {
-        let buffer_info = [*DescriptorBufferInfo::builder()
+        let buffer_info = [DescriptorBufferInfo::default()
             .buffer(buffer.buffer)
             .range(buffer.content_size())];
-        let write = WriteDescriptorSet::builder()
+        let write = WriteDescriptorSet::default()
             .buffer_info(&buffer_info)
             .descriptor_type(DescriptorType::STORAGE_BUFFER)
             .dst_set(self.descriptor_sets[set])
             .dst_binding(binding as _);
-        unsafe { self.device.handle().update_descriptor_sets(&[*write], &[]) }
+        unsafe { self.device.handle().update_descriptor_sets(&[write], &[]) }
     }
 
     pub fn set_storage_image(&mut self, set: usize, binding: usize, image: &Image2DResource) {
-        let image_info = [*DescriptorImageInfo::builder()
+        let image_info = [DescriptorImageInfo::default()
             .image_view(image.view())
             .image_layout(image.layout())];
-        let write = WriteDescriptorSet::builder()
+        let write = WriteDescriptorSet::default()
             .image_info(&image_info)
             .descriptor_type(DescriptorType::STORAGE_IMAGE)
             .dst_set(self.descriptor_sets[set])
             .dst_binding(binding as _);
-        unsafe { self.device.handle().update_descriptor_sets(&[*write], &[]) }
+        unsafe { self.device.handle().update_descriptor_sets(&[write], &[]) }
     }
 
     pub fn set_uniform_buffer(&mut self, set: usize, binding: usize, buffer: &BufferResource) {
-        let buffer_info = [*DescriptorBufferInfo::builder()
+        let buffer_info = [DescriptorBufferInfo::default()
             .buffer(buffer.buffer)
             .range(buffer.size())];
-        let write = WriteDescriptorSet::builder()
+        let write = WriteDescriptorSet::default()
             .buffer_info(&buffer_info)
             .descriptor_type(DescriptorType::UNIFORM_BUFFER)
             .dst_set(self.descriptor_sets[set])
             .dst_binding(binding as _);
-        unsafe { self.device.handle().update_descriptor_sets(&[*write], &[]) }
+        unsafe { self.device.handle().update_descriptor_sets(&[write], &[]) }
     }
 
     fn create_descriptor_set_bindings(
@@ -80,7 +80,7 @@ impl ComputePipeline {
         let mut sets = HashMap::<u32, Vec<DescriptorSetLayoutBinding>>::new();
         if let Some(bindings) = reflection.bindings() {
             for binding in bindings {
-                let mut b = DescriptorSetLayoutBinding::builder();
+                let mut b = DescriptorSetLayoutBinding::default();
                 b = b
                     .binding(binding.binding)
                     .descriptor_count(binding.count)
@@ -124,7 +124,7 @@ impl ComputePipeline {
                         b = b.descriptor_type(DescriptorType::ACCELERATION_STRUCTURE_NV);
                     }
                 }
-                sets.entry(binding.set).or_insert_with(Vec::new).push(*b);
+                sets.entry(binding.set).or_insert_with(Vec::new).push(b);
             }
         }
         sets
@@ -180,7 +180,7 @@ impl ComputePipeline {
             if let Some(push_blocks) = reflection.push_constants() {
                 for block in push_blocks {
                     constant_ranges.push(
-                        *PushConstantRange::builder()
+                        PushConstantRange::default()
                             .size(block.size)
                             .offset(block.offset)
                             .stage_flags(ShaderStageFlags::COMPUTE),
@@ -191,7 +191,7 @@ impl ComputePipeline {
             let mut layouts = vec![DescriptorSetLayout::default(); descriptor_set_bindings.len()];
             let mut pool_sizes = Vec::new();
             for (index, set) in &descriptor_set_bindings {
-                let mut builder = DescriptorSetLayoutCreateInfo::builder();
+                let mut builder = DescriptorSetLayoutCreateInfo::default();
                 builder = builder.bindings(set);
                 let layout = unsafe {
                     device
@@ -203,14 +203,14 @@ impl ComputePipeline {
                 layouts[*index as usize] = layout;
 
                 for binding in set {
-                    let size = DescriptorPoolSize::builder()
+                    let size = DescriptorPoolSize::default()
                         .ty(binding.descriptor_type)
                         .descriptor_count(binding.descriptor_count);
-                    pool_sizes.push(*size);
+                    pool_sizes.push(size);
                 }
             }
 
-            let pipeline_info_builder = PipelineLayoutCreateInfo::builder()
+            let pipeline_info_builder = PipelineLayoutCreateInfo::default()
                 .set_layouts(&layouts)
                 .push_constant_ranges(&constant_ranges);
             let pipeline_layout = unsafe {
@@ -220,7 +220,7 @@ impl ComputePipeline {
                     .expect("Pipeline layout creation failed")
             };
 
-            let shader_info = ShaderModuleCreateInfo::builder().code(result.spirv());
+            let shader_info = ShaderModuleCreateInfo::default().code(result.spirv());
             let shader_module = unsafe {
                 device
                     .handle()
@@ -229,27 +229,23 @@ impl ComputePipeline {
             };
 
             let s = CString::new(entry_point).expect("String creation failed");
-            let shader_stage_info = PipelineShaderStageCreateInfo::builder()
+            let shader_stage_info = PipelineShaderStageCreateInfo::default()
                 .module(shader_module)
                 .stage(ShaderStageFlags::COMPUTE)
                 .name(&s);
 
-            let compute_pipeline_info = ComputePipelineCreateInfo::builder()
+            let compute_pipeline_info = ComputePipelineCreateInfo::default()
                 .layout(pipeline_layout)
-                .stage(*shader_stage_info);
+                .stage(shader_stage_info);
 
             let pipeline = unsafe {
                 device
                     .handle()
-                    .create_compute_pipelines(
-                        PipelineCache::null(),
-                        &[*compute_pipeline_info],
-                        None,
-                    )
+                    .create_compute_pipelines(PipelineCache::null(), &[compute_pipeline_info], None)
                     .expect("Pipeline creation failed")[0]
             };
 
-            let pool_info = DescriptorPoolCreateInfo::builder()
+            let pool_info = DescriptorPoolCreateInfo::default()
                 .pool_sizes(&pool_sizes)
                 .max_sets(max_frames_in_flight * descriptor_set_bindings.len() as u32);
 
@@ -259,7 +255,7 @@ impl ComputePipeline {
                     .create_descriptor_pool(&pool_info, None)
                     .expect("Descriptor pool creation failed")
             };
-            let allocation_info = DescriptorSetAllocateInfo::builder()
+            let allocation_info = DescriptorSetAllocateInfo::default()
                 .descriptor_pool(pool)
                 .set_layouts(&layouts);
             let descriptor_sets = unsafe {

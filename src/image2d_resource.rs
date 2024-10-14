@@ -5,9 +5,10 @@ use crate::image_resource::ImageResource;
 use crate::memory::memory_type_index;
 
 use ash::vk::{
-    DeviceMemory, Extent3D, Format, Image, ImageAspectFlags, ImageCreateInfo, ImageLayout, ImageSubresourceRange, ImageType, ImageUsageFlags, ImageView,
-    ImageViewCreateInfo, ImageViewType, MemoryAllocateInfo, MemoryPropertyFlags, SampleCountFlags,
-    SharingMode,
+    DeviceMemory, Extent3D, Format, Image, ImageAspectFlags, ImageCreateInfo, ImageLayout,
+    ImageSubresourceRange, ImageType, ImageUsageFlags, ImageView, ImageViewCreateInfo,
+    ImageViewType, MemoryAllocateInfo, MemoryPropertyFlags, PhysicalDeviceMemoryProperties2,
+    SampleCountFlags, SharingMode,
 };
 
 use ash::Device;
@@ -17,8 +18,10 @@ pub struct Image2DResource {
     image: Image,
     memory: DeviceMemory,
     pub layout: ImageLayout,
-    image_info: ImageCreateInfo,
     view: ImageView,
+    width: u32,
+    height: u32,
+    format: Format,
 }
 
 impl Image2DResource {
@@ -31,18 +34,12 @@ impl Image2DResource {
         property_flags: MemoryPropertyFlags,
     ) -> Self {
         unsafe {
-            let image_info = ImageCreateInfo::builder()
+            let image_info = ImageCreateInfo::default()
                 .image_type(ImageType::TYPE_2D)
                 .samples(SampleCountFlags::TYPE_1)
                 .sharing_mode(SharingMode::EXCLUSIVE)
                 .format(format)
-                .extent(
-                    Extent3D::builder()
-                        .width(width)
-                        .height(height)
-                        .depth(1)
-                        .build(),
-                )
+                .extent(Extent3D::default().width(width).height(height).depth(1))
                 .array_layers(1)
                 .mip_levels(1)
                 .usage(usage);
@@ -53,13 +50,15 @@ impl Image2DResource {
                 .create_image(&image_info, None)
                 .expect("Image creation failed");
             let memory_requirements = device.get_image_memory_requirements(image);
+            let mut properties = PhysicalDeviceMemoryProperties2::default();
+            context.gpu().memory_properties(&mut properties);
             let type_index = memory_type_index(
                 memory_requirements.memory_type_bits,
-                &context.gpu().memory_properties().memory_properties,
+                &properties.memory_properties,
                 property_flags,
             );
             if let Some(type_index) = type_index {
-                let allocation_info = MemoryAllocateInfo::builder()
+                let allocation_info = MemoryAllocateInfo::default()
                     .memory_type_index(type_index)
                     .allocation_size(memory_requirements.size);
                 let memory = device
@@ -70,16 +69,16 @@ impl Image2DResource {
                     .bind_image_memory(image, memory, 0)
                     .expect("Image memory bind failed");
 
-                let subresource_range = ImageSubresourceRange::builder()
+                let subresource_range = ImageSubresourceRange::default()
                     .base_array_layer(0)
                     .aspect_mask(ImageAspectFlags::COLOR)
                     .level_count(1)
                     .layer_count(1);
-                let view_info = ImageViewCreateInfo::builder()
+                let view_info = ImageViewCreateInfo::default()
                     .format(format)
                     .image(image)
                     .view_type(ImageViewType::TYPE_2D)
-                    .subresource_range(*subresource_range);
+                    .subresource_range(subresource_range);
                 let view = context
                     .handle()
                     .create_image_view(&view_info, None)
@@ -90,7 +89,9 @@ impl Image2DResource {
                     image,
                     memory,
                     layout: ImageLayout::UNDEFINED,
-                    image_info: image_info.build(),
+                    width,
+                    height,
+                    format,
                     view,
                 }
             } else {
@@ -102,10 +103,10 @@ impl Image2DResource {
 
 impl ImageResource for Image2DResource {
     fn width(&self) -> u32 {
-        self.image_info.extent.width
+        self.width
     }
     fn height(&self) -> u32 {
-        self.image_info.extent.height
+        self.height
     }
     fn depth(&self) -> u32 {
         1
@@ -114,7 +115,7 @@ impl ImageResource for Image2DResource {
         self.image
     }
     fn format(&self) -> Format {
-        self.image_info.format
+        self.format
     }
     fn layout(&self) -> ImageLayout {
         self.layout

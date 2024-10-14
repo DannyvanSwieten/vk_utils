@@ -1,12 +1,13 @@
 use std::panic;
 
-use vk_utils::{vulkan::Vulkan, DebugUtils};
+use ash::ext::debug_utils;
+use vk_utils::vulkan::Vulkan;
 
 pub fn main() {
     let vulkan = Vulkan::new(
         "My Application",
         &["VK_LAYER_KHRONOS_validation"],
-        &[DebugUtils::name().to_str().unwrap()],
+        &[debug_utils::NAME.to_str().unwrap()],
     );
 
     let devices = vulkan.physical_devices();

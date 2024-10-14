@@ -15,10 +15,9 @@ impl CommandQueue {
     pub fn new(device: Rc<DeviceContext>, flags: QueueFlags) -> Self {
         let queue_family_index = device.queue_family_index(flags).unwrap();
 
-        let pool_info = CommandPoolCreateInfo::builder()
+        let pool_info = CommandPoolCreateInfo::default()
             .flags(CommandPoolCreateFlags::TRANSIENT)
-            .queue_family_index(queue_family_index)
-            .build();
+            .queue_family_index(queue_family_index);
         let command_pool = unsafe {
             device
                 .handle()

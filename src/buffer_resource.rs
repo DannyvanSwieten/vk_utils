@@ -6,7 +6,8 @@ use crate::memory::memory_type_index;
 use ash::vk::{
     Buffer, BufferCreateInfo, BufferDeviceAddressInfo, BufferUsageFlags, DeviceAddress,
     DeviceMemory, MappedMemoryRange, MemoryAllocateFlags, MemoryAllocateFlagsInfo,
-    MemoryAllocateInfo, MemoryMapFlags, MemoryPropertyFlags, SharingMode,
+    MemoryAllocateInfo, MemoryMapFlags, MemoryPropertyFlags, PhysicalDeviceMemoryProperties2,
+    SharingMode,
 };
 pub struct BufferResource {
     device: Rc<DeviceContext>,
@@ -18,7 +19,7 @@ pub struct BufferResource {
 
 impl BufferResource {
     pub fn flush_all(&self) {
-        let ranges = [*MappedMemoryRange::builder()
+        let ranges = [MappedMemoryRange::default()
             .memory(self.memory)
             .size(self.size)];
         unsafe {
@@ -42,7 +43,7 @@ impl BufferResource {
 
             std::ptr::copy_nonoverlapping(data.as_ptr(), ptr as _, size);
 
-            let ranges = [*MappedMemoryRange::builder()
+            let ranges = [MappedMemoryRange::default()
                 .memory(self.memory)
                 .size(self.size)];
 
@@ -66,7 +67,7 @@ impl BufferResource {
 
             std::ptr::copy_nonoverlapping(data.as_ptr(), ptr.offset(offset as _) as _, size);
 
-            let ranges = [*MappedMemoryRange::builder()
+            let ranges = [MappedMemoryRange::default()
                 .memory(self.memory)
                 .size(self.size)];
 
@@ -101,7 +102,7 @@ impl BufferResource {
                 );
 
                 data_index += element_size;
-                let ranges = [*MappedMemoryRange::builder()
+                let ranges = [MappedMemoryRange::default()
                     .memory(self.memory)
                     .offset(i)
                     .size(ash::vk::WHOLE_SIZE)];
@@ -157,6 +158,13 @@ impl BufferResource {
             self.device.handle().unmap_memory(self.memory);
         }
     }
+
+    pub fn from_data<T: Sized>(device: Rc<DeviceContext>, data: &[T]) -> Self {
+        let size = std::mem::size_of_val(data) as u64;
+        let mut buffer = Self::new_host_visible_storage(device.clone(), size as _);
+        buffer.upload(data);
+        buffer
+    }
 }
 
 impl BufferResource {
@@ -168,7 +176,7 @@ impl BufferResource {
     ) -> Self {
         unsafe {
             let device = device_context.handle();
-            let buffer_info = BufferCreateInfo::builder()
+            let buffer_info = BufferCreateInfo::default()
                 .size(size as _)
                 .sharing_mode(SharingMode::EXCLUSIVE)
                 .usage(usage);
@@ -177,18 +185,21 @@ impl BufferResource {
                 .create_buffer(&buffer_info, None)
                 .expect("Buffer creation failed");
             let memory_requirements = device.get_buffer_memory_requirements(buffer);
+            let mut properties = PhysicalDeviceMemoryProperties2::default();
+            device_context.gpu().memory_properties(&mut properties);
+
             let type_index = memory_type_index(
                 memory_requirements.memory_type_bits,
-                &device_context.gpu().memory_properties().memory_properties,
+                &properties.memory_properties,
                 property_flags,
             );
 
-            let mut allocate_flags = MemoryAllocateFlagsInfo::builder();
+            let mut allocate_flags = MemoryAllocateFlagsInfo::default();
             if usage.contains(BufferUsageFlags::SHADER_DEVICE_ADDRESS) {
                 allocate_flags = allocate_flags.flags(MemoryAllocateFlags::DEVICE_ADDRESS)
             }
             if let Some(type_index) = type_index {
-                let allocation_info = MemoryAllocateInfo::builder()
+                let allocation_info = MemoryAllocateInfo::default()
                     .push_next(&mut allocate_flags)
                     .memory_type_index(type_index)
                     .allocation_size(memory_requirements.size);
@@ -236,7 +247,7 @@ impl BufferResource {
     }
 
     pub fn device_address(&self) -> DeviceAddress {
-        let v_address_info = BufferDeviceAddressInfo::builder().buffer(self.buffer);
+        let v_address_info = BufferDeviceAddressInfo::default().buffer(self.buffer);
         unsafe {
             self.device
                 .handle()

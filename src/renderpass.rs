@@ -7,15 +7,14 @@ use ash::vk::{
 
 use crate::{device_context::DeviceContext, swapchain::Swapchain};
 
-pub struct RenderPass<'a> {
+pub struct RenderPass {
     device: Rc<DeviceContext>,
     attachment_refs: Vec<AttachmentReference>,
     attachment_descriptions: Vec<AttachmentDescription>,
     subpass_dependencies: Vec<SubpassDependency>,
-    subpass_descriptions: Vec<SubpassDescription<'a>>,
     handle: ash::vk::RenderPass,
 }
-impl<'a> RenderPass<'a> {
+impl RenderPass {
     pub fn from_swapchain(device: Rc<DeviceContext>, swapchain: &Swapchain) -> Self {
         let attachment_descriptions = vec![ash::vk::AttachmentDescription {
             format: *swapchain.format(),
@@ -63,7 +62,6 @@ impl<'a> RenderPass<'a> {
             attachment_descriptions,
             attachment_refs,
             subpass_dependencies,
-            subpass_descriptions,
             handle,
         }
     }
@@ -74,7 +72,6 @@ impl<'a> RenderPass<'a> {
             attachment_refs: Vec::new(),
             attachment_descriptions: Vec::new(),
             subpass_dependencies: Vec::new(),
-            subpass_descriptions: Vec::new(),
             handle: ash::vk::RenderPass::null(),
         }
     }
@@ -129,7 +126,6 @@ impl<'a> RenderPass<'a> {
             attachment_descriptions,
             attachment_refs,
             subpass_dependencies,
-            subpass_descriptions,
             handle,
         }
     }
@@ -139,7 +135,7 @@ impl<'a> RenderPass<'a> {
     }
 }
 
-impl<'a> Drop for RenderPass<'a> {
+impl Drop for RenderPass {
     fn drop(&mut self) {
         unsafe { self.device.handle().destroy_render_pass(self.handle, None) }
     }
