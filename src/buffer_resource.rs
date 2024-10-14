@@ -158,13 +158,6 @@ impl BufferResource {
             self.device.handle().unmap_memory(self.memory);
         }
     }
-
-    pub fn from_data<T: Sized>(device: Rc<DeviceContext>, data: &[T]) -> Self {
-        let size = std::mem::size_of_val(data) as u64;
-        let mut buffer = Self::new_host_visible_storage(device.clone(), size as _);
-        buffer.upload(data);
-        buffer
-    }
 }
 
 impl BufferResource {
@@ -231,6 +224,10 @@ impl BufferResource {
             MemoryPropertyFlags::HOST_VISIBLE,
             BufferUsageFlags::STORAGE_BUFFER | BufferUsageFlags::SHADER_DEVICE_ADDRESS,
         )
+    }
+
+    pub fn new_host_visible_with_data<T: Sized>(device: Rc<DeviceContext>, data: &[T]) -> Self {
+        Self::new_host_visible_storage(device, std::mem::size_of_val(data)).with_data(data)
     }
 
     pub fn with_data<T>(mut self, data: &[T]) -> Self {

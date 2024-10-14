@@ -1,4 +1,5 @@
 use byteorder::ReadBytesExt;
+use rspirv_reflect::{DescriptorInfo, Reflection};
 use spirv_reflect::{
     types::{
         ReflectBlockVariable, ReflectDescriptorBinding, ReflectDescriptorSet,
@@ -6,8 +7,8 @@ use spirv_reflect::{
     },
     ShaderModule,
 };
-use std::fs::File;
 use std::path::Path;
+use std::{collections::BTreeMap, fs::File};
 
 use shaderc::{CompilationArtifact, CompileOptions, Compiler, OptimizationLevel, ShaderKind};
 
@@ -25,38 +26,14 @@ pub fn load_spirv(path: &str) -> Vec<u32> {
 }
 
 pub struct ShaderReflection {
-    module: ShaderModule,
+    // module: ShaderModule,
+    reflection: Reflection,
 }
 
 impl ShaderReflection {
-    pub fn entry_point(&self) -> String {
-        self.module.get_entry_point_name()
-    }
-
-    pub fn outputs(&self) -> Option<Vec<ReflectInterfaceVariable>> {
-        match self.module.enumerate_output_variables(None) {
-            Ok(outputs) => Some(outputs),
-            Err(_) => None,
-        }
-    }
-
-    pub fn descriptor_sets(&self) -> Option<Vec<ReflectDescriptorSet>> {
-        match self.module.enumerate_descriptor_sets(None) {
+    pub fn descriptor_sets(&self) -> Option<BTreeMap<u32, BTreeMap<u32, DescriptorInfo>>> {
+        match self.reflection.get_descriptor_sets() {
             Ok(sets) => Some(sets),
-            Err(_) => None,
-        }
-    }
-
-    pub fn bindings(&self) -> Option<Vec<ReflectDescriptorBinding>> {
-        match self.module.enumerate_descriptor_bindings(None) {
-            Ok(bindings) => Some(bindings),
-            Err(_) => None,
-        }
-    }
-
-    pub fn push_constants(&self) -> Option<Vec<ReflectBlockVariable>> {
-        match self.module.enumerate_push_constant_blocks(None) {
-            Ok(push_constant_blocks) => Some(push_constant_blocks),
             Err(_) => None,
         }
     }
@@ -94,8 +71,8 @@ impl CompilationResult {
 
     pub fn reflect(&self) -> ShaderReflection {
         match &self.result {
-            Ok(s) => match ShaderModule::load_u32_data(s.as_binary()) {
-                Ok(module) => ShaderReflection { module },
+            Ok(s) => match Reflection::new_from_spirv(s.as_binary_u8()) {
+                Ok(reflection) => ShaderReflection { reflection },
                 Err(e) => panic!("Error: {}", e),
             },
             Err(e) => panic!("Error: {}", e),

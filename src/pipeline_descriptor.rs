@@ -7,8 +7,8 @@ use ash::vk::{
     PipelineCache, PipelineLayout, PipelineLayoutCreateInfo, PipelineShaderStageCreateInfo,
     PushConstantRange, ShaderModuleCreateInfo, ShaderStageFlags, WriteDescriptorSet,
 };
+use rspirv_reflect::BindingCount;
 use shaderc::ShaderKind;
-use spirv_reflect::types::ReflectDescriptorType;
 
 use crate::{
     buffer_resource::BufferResource,
@@ -78,53 +78,73 @@ impl ComputePipeline {
         reflection: &ShaderReflection,
     ) -> HashMap<u32, Vec<DescriptorSetLayoutBinding>> {
         let mut sets = HashMap::<u32, Vec<DescriptorSetLayoutBinding>>::new();
-        if let Some(bindings) = reflection.bindings() {
-            for binding in bindings {
-                let mut b = DescriptorSetLayoutBinding::default();
-                b = b
-                    .binding(binding.binding)
-                    .descriptor_count(binding.count)
-                    .stage_flags(ShaderStageFlags::COMPUTE);
-                match binding.descriptor_type {
-                    ReflectDescriptorType::Undefined => todo!(),
-                    ReflectDescriptorType::Sampler => {
-                        b = b.descriptor_type(DescriptorType::SAMPLER);
+        if let Some(descriptor_sets) = reflection.descriptor_sets() {
+            for (set, descriptors) in descriptor_sets {
+                for (index, descriptor) in descriptors {
+                    // let mut v = Vec::new();
+                    let mut b = DescriptorSetLayoutBinding::default()
+                        .binding(index)
+                        .stage_flags(ShaderStageFlags::COMPUTE);
+                    match descriptor.binding_count {
+                        BindingCount::One => {
+                            b = b.descriptor_count(1);
+                        }
+                        BindingCount::StaticSized(size) => {
+                            b = b.descriptor_count(size as _);
+                        }
+                        BindingCount::Unbounded => {
+                            b = b.descriptor_count(0);
+                        }
                     }
-                    ReflectDescriptorType::CombinedImageSampler => {
-                        b = b.descriptor_type(DescriptorType::COMBINED_IMAGE_SAMPLER);
+
+                    match descriptor.ty {
+                        rspirv_reflect::DescriptorType::SAMPLER => {
+                            b = b.descriptor_type(DescriptorType::SAMPLER);
+                        }
+                        rspirv_reflect::DescriptorType::COMBINED_IMAGE_SAMPLER => {
+                            b = b.descriptor_type(DescriptorType::COMBINED_IMAGE_SAMPLER);
+                        }
+                        rspirv_reflect::DescriptorType::SAMPLED_IMAGE => {
+                            b = b.descriptor_type(DescriptorType::SAMPLED_IMAGE);
+                        }
+                        rspirv_reflect::DescriptorType::STORAGE_IMAGE => {
+                            b = b.descriptor_type(DescriptorType::STORAGE_IMAGE);
+                        }
+                        rspirv_reflect::DescriptorType::UNIFORM_TEXEL_BUFFER => {
+                            b = b.descriptor_type(DescriptorType::UNIFORM_TEXEL_BUFFER);
+                        }
+                        rspirv_reflect::DescriptorType::STORAGE_TEXEL_BUFFER => {
+                            b = b.descriptor_type(DescriptorType::STORAGE_TEXEL_BUFFER);
+                        }
+                        rspirv_reflect::DescriptorType::UNIFORM_BUFFER => {
+                            b = b.descriptor_type(DescriptorType::UNIFORM_BUFFER);
+                        }
+                        rspirv_reflect::DescriptorType::STORAGE_BUFFER => {
+                            b = b.descriptor_type(DescriptorType::STORAGE_BUFFER);
+                        }
+                        rspirv_reflect::DescriptorType::UNIFORM_BUFFER_DYNAMIC => {
+                            b = b.descriptor_type(DescriptorType::UNIFORM_BUFFER_DYNAMIC);
+                        }
+                        rspirv_reflect::DescriptorType::STORAGE_BUFFER_DYNAMIC => {
+                            b = b.descriptor_type(DescriptorType::STORAGE_BUFFER_DYNAMIC);
+                        }
+                        rspirv_reflect::DescriptorType::INPUT_ATTACHMENT => {
+                            b = b.descriptor_type(DescriptorType::INPUT_ATTACHMENT);
+                        }
+                        rspirv_reflect::DescriptorType::ACCELERATION_STRUCTURE_NV => {
+                            b = b.descriptor_type(DescriptorType::ACCELERATION_STRUCTURE_NV);
+                        }
+                        rspirv_reflect::DescriptorType::ACCELERATION_STRUCTURE_KHR => {
+                            b = b.descriptor_type(DescriptorType::ACCELERATION_STRUCTURE_KHR);
+                        }
+                        rspirv_reflect::DescriptorType::INLINE_UNIFORM_BLOCK_EXT => {
+                            b = b.descriptor_type(DescriptorType::INLINE_UNIFORM_BLOCK_EXT);
+                        }
+                        _ => {} // todo!(),
                     }
-                    ReflectDescriptorType::SampledImage => {
-                        b = b.descriptor_type(DescriptorType::SAMPLED_IMAGE);
-                    }
-                    ReflectDescriptorType::StorageImage => {
-                        b = b.descriptor_type(DescriptorType::STORAGE_IMAGE);
-                    }
-                    ReflectDescriptorType::UniformTexelBuffer => {
-                        b = b.descriptor_type(DescriptorType::UNIFORM_TEXEL_BUFFER);
-                    }
-                    ReflectDescriptorType::StorageTexelBuffer => {
-                        b = b.descriptor_type(DescriptorType::STORAGE_TEXEL_BUFFER);
-                    }
-                    ReflectDescriptorType::UniformBuffer => {
-                        b = b.descriptor_type(DescriptorType::UNIFORM_BUFFER);
-                    }
-                    ReflectDescriptorType::StorageBuffer => {
-                        b = b.descriptor_type(DescriptorType::STORAGE_BUFFER);
-                    }
-                    ReflectDescriptorType::UniformBufferDynamic => {
-                        b = b.descriptor_type(DescriptorType::UNIFORM_BUFFER_DYNAMIC);
-                    }
-                    ReflectDescriptorType::StorageBufferDynamic => {
-                        b = b.descriptor_type(DescriptorType::STORAGE_BUFFER_DYNAMIC);
-                    }
-                    ReflectDescriptorType::InputAttachment => {
-                        b = b.descriptor_type(DescriptorType::INPUT_ATTACHMENT);
-                    }
-                    ReflectDescriptorType::AccelerationStructureNV => {
-                        b = b.descriptor_type(DescriptorType::ACCELERATION_STRUCTURE_NV);
-                    }
+
+                    sets.entry(set).or_default().push(b);
                 }
-                sets.entry(binding.set).or_insert_with(Vec::new).push(b);
             }
         }
         sets
@@ -177,16 +197,16 @@ impl ComputePipeline {
             }
 
             let mut constant_ranges = Vec::new();
-            if let Some(push_blocks) = reflection.push_constants() {
-                for block in push_blocks {
-                    constant_ranges.push(
-                        PushConstantRange::default()
-                            .size(block.size)
-                            .offset(block.offset)
-                            .stage_flags(ShaderStageFlags::COMPUTE),
-                    );
-                }
-            }
+            // if let Some(push_blocks) = reflection.push_constants() {
+            //     for block in push_blocks {
+            //         constant_ranges.push(
+            //             PushConstantRange::default()
+            //                 .size(block.size)
+            //                 .offset(block.offset)
+            //                 .stage_flags(ShaderStageFlags::COMPUTE),
+            //         );
+            //     }
+            // }
 
             let mut layouts = vec![DescriptorSetLayout::default(); descriptor_set_bindings.len()];
             let mut pool_sizes = Vec::new();

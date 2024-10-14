@@ -1,5 +1,5 @@
 use ash::ext::debug_utils;
-use ash::vk::{BufferUsageFlags, MemoryPropertyFlags, QueueFlags};
+use ash::vk::QueueFlags;
 use std::rc::Rc;
 use vk_utils::buffer_resource::BufferResource;
 use vk_utils::command_buffer::CommandBuffer;
@@ -14,16 +14,8 @@ pub fn main() {
         &[debug_utils::NAME.to_str().unwrap()],
     );
 
-    let physical_devices = vulkan.physical_devices();
-    let compute_device_index = physical_devices
-        .iter()
-        .position(|device| device.supports_compute());
-
-    let logical_device = if let Some(index) = compute_device_index {
-        physical_devices[index].device_context(&[])
-    } else {
-        panic!()
-    };
+    let logical_device =
+        vulkan.devices_with_queue_support(QueueFlags::COMPUTE)[0].device_context(&[]);
 
     let src = r"
     #version 450
@@ -37,20 +29,18 @@ pub fn main() {
     ";
 
     let logical_device = Rc::new(logical_device);
+    let queue = Rc::new(CommandQueue::new(
+        logical_device.clone(),
+        QueueFlags::COMPUTE,
+    ));
+
     let pipeline =
         ComputePipeline::new_from_source_string(logical_device.clone(), 1, src, "main", None);
     let result = if let Some(mut pipeline) = pipeline {
         let data: Vec<i32> = (0..10).collect();
-        let buffer_size = std::mem::size_of::<i32>() * data.len();
-        let mut buffer = BufferResource::new(
-            logical_device.clone(),
-            buffer_size as _,
-            MemoryPropertyFlags::HOST_VISIBLE,
-            BufferUsageFlags::STORAGE_BUFFER,
-        );
-        buffer.upload(&data);
+        let buffer = BufferResource::new_host_visible_with_data(logical_device.clone(), &data);
         pipeline.set_storage_buffer(0, 0, &buffer);
-        let queue = Rc::new(CommandQueue::new(logical_device, QueueFlags::COMPUTE));
+
         let mut command_buffer = CommandBuffer::new(queue);
         command_buffer.begin();
         command_buffer.bind_compute_pipeline(&pipeline);
