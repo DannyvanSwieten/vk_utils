@@ -1,16 +1,15 @@
-use ash::extensions::ext::MetalSurface;
 use ash::vk::{
     make_api_version, ApplicationInfo, Bool32, DebugUtilsMessageSeverityFlagsEXT,
     DebugUtilsMessageTypeFlagsEXT, DebugUtilsMessengerCallbackDataEXT,
     DebugUtilsMessengerCreateInfoEXT, DebugUtilsMessengerEXT, InstanceCreateFlags,
-    InstanceCreateInfo, KhrGetPhysicalDeviceProperties2Fn, KhrPortabilityEnumerationFn, QueueFlags,
-    FALSE,
+    InstanceCreateInfo, QueueFlags, FALSE,
 };
 pub use ash::{Entry, Instance};
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 
-use ash::extensions::{ext::DebugUtils, khr::Win32Surface};
+use ash::ext::{debug_utils, metal_surface};
+use ash::khr::{get_physical_device_properties2, portability_enumeration, win32_surface};
 
 use crate::gpu::Gpu;
 
@@ -49,9 +48,9 @@ unsafe extern "system" fn vulkan_debug_callback(
 
 pub fn surface_extension_name() -> &'static CStr {
     if cfg!(unix) {
-        MetalSurface::name()
+        metal_surface::NAME
     } else {
-        Win32Surface::name()
+        win32_surface::NAME
     }
 }
 
@@ -68,7 +67,7 @@ impl Vulkan {
         let layers_names_raw: Vec<*const i8> =
             layers_names.iter().map(|s| s.as_ptr() as _).collect();
         let c_name = CString::new(name).unwrap();
-        let appinfo = ApplicationInfo::builder()
+        let appinfo = ApplicationInfo::default()
             .application_name(&c_name)
             .application_version(0)
             .engine_name(&c_name)
@@ -87,12 +86,12 @@ impl Vulkan {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         {
             flags |= InstanceCreateFlags::ENUMERATE_PORTABILITY_KHR;
-            extension_names_raw.push(KhrPortabilityEnumerationFn::name().as_ptr());
+            extension_names_raw.push(portability_enumeration::NAME.as_ptr());
             // Enabling this extension is a requirement when using `VK_KHR_portability_subset`
-            extension_names_raw.push(KhrGetPhysicalDeviceProperties2Fn::name().as_ptr());
+            extension_names_raw.push(get_physical_device_properties2::NAME.as_ptr());
         }
 
-        let create_info = InstanceCreateInfo::builder()
+        let create_info = InstanceCreateInfo::default()
             .application_info(&appinfo)
             .enabled_layer_names(&layers_names_raw)
             .enabled_extension_names(&extension_names_raw)
@@ -104,7 +103,7 @@ impl Vulkan {
                 .create_instance(&create_info, None)
                 .expect("Instance creation error");
 
-            let debug_info = DebugUtilsMessengerCreateInfoEXT::builder()
+            let debug_info = DebugUtilsMessengerCreateInfoEXT::default()
                 .message_severity(
                     DebugUtilsMessageSeverityFlagsEXT::ERROR
                         | DebugUtilsMessageSeverityFlagsEXT::WARNING
@@ -113,7 +112,7 @@ impl Vulkan {
                 .message_type(DebugUtilsMessageTypeFlagsEXT::VALIDATION)
                 .pfn_user_callback(Some(vulkan_debug_callback));
 
-            let debug_utils_loader = DebugUtils::new(&library, &instance);
+            let debug_utils_loader = debug_utils::Instance::new(&library, &instance);
             let debug_callback =
                 match debug_utils_loader.create_debug_utils_messenger(&debug_info, None) {
                     Ok(succes) => Some(succes),
@@ -168,6 +167,36 @@ impl Vulkan {
                 .expect("Physical device enumeration failed")
                 .iter()
                 .map(|device| Gpu::new(self, device))
+                .collect()
+        }
+    }
+
+    pub fn available_instance_layers() -> Vec<String> {
+        let library = unsafe { Entry::load().unwrap() };
+        unsafe {
+            library
+                .enumerate_instance_layer_properties()
+                .unwrap()
+                .iter()
+                .map(|layer| {
+                    let name = CStr::from_ptr(layer.layer_name.as_ptr());
+                    name.to_str().unwrap().to_string()
+                })
+                .collect()
+        }
+    }
+
+    pub fn available_instance_extensions() -> Vec<String> {
+        let library = unsafe { Entry::load().unwrap() };
+        unsafe {
+            library
+                .enumerate_instance_extension_properties(None)
+                .unwrap()
+                .iter()
+                .map(|ext| {
+                    let name = CStr::from_ptr(ext.extension_name.as_ptr());
+                    name.to_str().unwrap().to_string()
+                })
                 .collect()
         }
     }

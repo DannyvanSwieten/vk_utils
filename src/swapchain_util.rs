@@ -1,14 +1,14 @@
-use std::rc::Rc;
-
 use crate::queue::CommandQueue;
+use ash::khr::{surface, swapchain};
+use std::rc::Rc;
 
 pub(crate) fn create_swapchain(
     instance: &ash::Instance,
     gpu: &ash::vk::PhysicalDevice,
     ctx: &ash::Device,
-    surface_loader: &ash::extensions::khr::Surface,
+    surface_loader: &surface::Instance,
     surface: ash::vk::SurfaceKHR,
-    _swapchain_loader: &ash::extensions::khr::Swapchain,
+    swapchain_loader: &swapchain::Device,
     old_swapchain: ash::vk::SwapchainKHR,
     queue: Rc<CommandQueue>,
     width: u32,
@@ -66,9 +66,8 @@ pub(crate) fn create_swapchain(
         .cloned()
         .find(|&mode| mode == ash::vk::PresentModeKHR::MAILBOX)
         .unwrap_or(ash::vk::PresentModeKHR::FIFO);
-    let swapchain_loader = ash::extensions::khr::Swapchain::new(instance, ctx);
 
-    let swapchain_create_info = ash::vk::SwapchainCreateInfoKHR::builder()
+    let swapchain_create_info = ash::vk::SwapchainCreateInfoKHR::default()
         .surface(surface)
         .min_image_count(desired_image_count)
         .image_color_space(format.color_space)
@@ -98,7 +97,7 @@ pub(crate) fn create_swapchain(
     let image_views: Vec<ash::vk::ImageView> = images
         .iter()
         .map(|&image| {
-            let create_view_info = ash::vk::ImageViewCreateInfo::builder()
+            let create_view_info = ash::vk::ImageViewCreateInfo::default()
                 .view_type(ash::vk::ImageViewType::TYPE_2D)
                 .format(format.format)
                 .components(ash::vk::ComponentMapping {

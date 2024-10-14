@@ -1,3 +1,5 @@
+use std::panic;
+
 use vk_utils::{vulkan::Vulkan, DebugUtils};
 
 pub fn main() {
@@ -7,7 +9,13 @@ pub fn main() {
         &[DebugUtils::name().to_str().unwrap()],
     );
 
-    for device in vulkan.physical_devices() {
-        println!("{}", device.name())
+    let devices = vulkan.physical_devices();
+
+    if devices.is_empty() {
+        panic!("No physical devices found");
+    } else {
+        for device in devices {
+            println!("{}", device.name())
+        }
     }
 }

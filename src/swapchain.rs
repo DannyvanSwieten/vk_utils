@@ -2,13 +2,13 @@ use crate::device_context::DeviceContext;
 use crate::queue::CommandQueue;
 use crate::swapchain_image::SwapchainImage;
 use crate::swapchain_util::create_swapchain;
+use ash::khr::{surface, swapchain};
 use ash::vk::{SurfaceKHR, SwapchainKHR};
 use std::rc::Rc;
-
 pub struct Swapchain {
     device: Rc<DeviceContext>,
     queue: Rc<CommandQueue>,
-    swapchain_loader: ash::extensions::khr::Swapchain,
+    swapchain_loader: swapchain::Device,
     surface: ash::vk::SurfaceKHR,
     handle: SwapchainKHR,
     images: Vec<SwapchainImage>,
@@ -36,10 +36,8 @@ impl Swapchain {
         height: u32,
     ) -> Self {
         let vulkan = device.gpu().vulkan();
-        let surface_loader =
-            ash::extensions::khr::Surface::new(vulkan.library(), vulkan.vk_instance());
-        let swapchain_loader =
-            ash::extensions::khr::Swapchain::new(vulkan.vk_instance(), device.handle());
+        let surface_loader = surface::Instance::new(vulkan.library(), vulkan.vk_instance());
+        let swapchain_loader = swapchain::Device::new(vulkan.vk_instance(), device.handle());
         let old_swapchain_handle = if let Some(old_sc) = old_swapchain {
             old_sc.handle()
         } else {
@@ -82,12 +80,11 @@ impl Swapchain {
             ..Default::default()
         }];
 
-        let subpasses = [ash::vk::SubpassDescription::builder()
+        let subpasses = [ash::vk::SubpassDescription::default()
             .color_attachments(&attachment_refs)
-            .pipeline_bind_point(ash::vk::PipelineBindPoint::GRAPHICS)
-            .build()];
+            .pipeline_bind_point(ash::vk::PipelineBindPoint::GRAPHICS)];
 
-        let renderpass_create_info = ash::vk::RenderPassCreateInfo::builder()
+        let renderpass_create_info = ash::vk::RenderPassCreateInfo::default()
             .attachments(&attachments)
             .subpasses(&subpasses)
             .dependencies(&dependencies);
@@ -103,7 +100,7 @@ impl Swapchain {
             .iter()
             .map(|&image_view| {
                 let attachments = [image_view];
-                let create_info = ash::vk::FramebufferCreateInfo::builder()
+                let create_info = ash::vk::FramebufferCreateInfo::default()
                     .render_pass(renderpass)
                     .attachments(&attachments)
                     .width(physical_width)
@@ -250,7 +247,7 @@ impl Swapchain {
         let s = &[*semaphore];
         let sc = &[self.handle];
         let i = &[index];
-        let present_info = ash::vk::PresentInfoKHR::builder()
+        let present_info = ash::vk::PresentInfoKHR::default()
             .wait_semaphores(s)
             .swapchains(sc)
             .image_indices(i);

@@ -1,20 +1,21 @@
-use std::{rc::Rc};
+use std::rc::Rc;
 
 use ash::vk::{
-    AttachmentDescription, AttachmentReference, Format, ImageLayout, SubpassDependency, SubpassDescription,
+    AttachmentDescription, AttachmentReference, Format, ImageLayout, SubpassDependency,
+    SubpassDescription,
 };
 
 use crate::{device_context::DeviceContext, swapchain::Swapchain};
 
-pub struct RenderPass {
+pub struct RenderPass<'a> {
     device: Rc<DeviceContext>,
     attachment_refs: Vec<AttachmentReference>,
     attachment_descriptions: Vec<AttachmentDescription>,
     subpass_dependencies: Vec<SubpassDependency>,
-    subpass_descriptions: Vec<SubpassDescription>,
+    subpass_descriptions: Vec<SubpassDescription<'a>>,
     handle: ash::vk::RenderPass,
 }
-impl RenderPass {
+impl<'a> RenderPass<'a> {
     pub fn from_swapchain(device: Rc<DeviceContext>, swapchain: &Swapchain) -> Self {
         let attachment_descriptions = vec![ash::vk::AttachmentDescription {
             format: *swapchain.format(),
@@ -39,12 +40,13 @@ impl RenderPass {
             ..Default::default()
         }];
 
-        let subpass_descriptions = vec![ash::vk::SubpassDescription::builder()
-            .color_attachments(&attachment_refs)
-            .pipeline_bind_point(ash::vk::PipelineBindPoint::GRAPHICS)
-            .build()];
+        let refs_clone = attachment_refs.clone();
 
-        let renderpass_create_info = ash::vk::RenderPassCreateInfo::builder()
+        let subpass_descriptions = vec![ash::vk::SubpassDescription::default()
+            .color_attachments(&refs_clone)
+            .pipeline_bind_point(ash::vk::PipelineBindPoint::GRAPHICS)];
+
+        let renderpass_create_info = ash::vk::RenderPassCreateInfo::default()
             .attachments(&attachment_descriptions)
             .subpasses(&subpass_descriptions)
             .dependencies(&subpass_dependencies);
@@ -106,12 +108,11 @@ impl RenderPass {
             ..Default::default()
         }];
 
-        let subpass_descriptions = vec![ash::vk::SubpassDescription::builder()
+        let subpass_descriptions = vec![ash::vk::SubpassDescription::default()
             .color_attachments(&attachment_refs)
-            .pipeline_bind_point(ash::vk::PipelineBindPoint::GRAPHICS)
-            .build()];
+            .pipeline_bind_point(ash::vk::PipelineBindPoint::GRAPHICS)];
 
-        let renderpass_create_info = ash::vk::RenderPassCreateInfo::builder()
+        let renderpass_create_info = ash::vk::RenderPassCreateInfo::default()
             .attachments(&attachment_descriptions)
             .subpasses(&subpass_descriptions)
             .dependencies(&subpass_dependencies);
@@ -138,7 +139,7 @@ impl RenderPass {
     }
 }
 
-impl Drop for RenderPass {
+impl<'a> Drop for RenderPass<'a> {
     fn drop(&mut self) {
         unsafe { self.device.handle().destroy_render_pass(self.handle, None) }
     }

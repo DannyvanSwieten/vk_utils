@@ -1,5 +1,5 @@
 use crate::gpu::Gpu;
-use ash::vk::{DeviceCreateInfoBuilder, DeviceQueueCreateInfo, QueueFlags};
+use ash::vk::{DeviceCreateInfo, DeviceQueueCreateInfo, QueueFlags};
 use ash::Device;
 
 pub struct DeviceContext {
@@ -10,10 +10,14 @@ pub struct DeviceContext {
 unsafe impl Send for DeviceContext {}
 
 impl DeviceContext {
-    pub(crate) fn new(gpu: &Gpu, extensions: &[&str], builder: DeviceCreateInfoBuilder) -> Self {
+    pub(crate) fn new(
+        gpu: &Gpu,
+        extensions: &[&str],
+        builder: DeviceCreateInfo::default(),
+    ) -> Self {
         let priorities: [f32; 1] = [1.];
         if let Some(index) = gpu.family_type_index(QueueFlags::GRAPHICS) {
-            let queue_info = [DeviceQueueCreateInfo::builder()
+            let queue_info = [DeviceQueueCreateInfo::default()
                 .queue_priorities(&priorities)
                 .queue_family_index(index)
                 .build()];
