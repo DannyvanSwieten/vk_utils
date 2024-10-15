@@ -1,12 +1,5 @@
 use byteorder::ReadBytesExt;
 use rspirv_reflect::{DescriptorInfo, Reflection};
-use spirv_reflect::{
-    types::{
-        ReflectBlockVariable, ReflectDescriptorBinding, ReflectDescriptorSet,
-        ReflectInterfaceVariable,
-    },
-    ShaderModule,
-};
 use std::path::Path;
 use std::{collections::BTreeMap, fs::File};
 
