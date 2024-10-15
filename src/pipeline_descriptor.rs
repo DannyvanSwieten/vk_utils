@@ -79,6 +79,10 @@ impl ComputePipeline {
     ) -> HashMap<u32, Vec<DescriptorSetLayoutBinding>> {
         let mut sets = HashMap::<u32, Vec<DescriptorSetLayoutBinding>>::new();
         if let Some(descriptor_sets) = reflection.descriptor_sets() {
+            #[cfg(debug_assertions)]
+            {
+                println!("Reflection: {:?}", descriptor_sets);
+            }
             for (set, descriptors) in descriptor_sets {
                 for (index, descriptor) in descriptors {
                     // let mut v = Vec::new();
