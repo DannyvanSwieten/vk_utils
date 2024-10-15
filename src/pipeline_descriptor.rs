@@ -39,6 +39,10 @@ impl ComputePipeline {
         &self.descriptor_sets
     }
 
+    pub fn workgroup_size(&self) -> (u32, u32, u32) {
+        self.workgroup_size
+    }
+
     pub fn set_storage_buffer(&mut self, set: usize, binding: usize, buffer: &BufferResource) {
         let buffer_info = [DescriptorBufferInfo::default()
             .buffer(buffer.buffer)
