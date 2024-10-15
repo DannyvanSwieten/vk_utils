@@ -201,16 +201,16 @@ impl ComputePipeline {
             }
 
             let mut constant_ranges = Vec::new();
-            // if let Some(push_blocks) = reflection.push_constants() {
-            //     for block in push_blocks {
-            //         constant_ranges.push(
-            //             PushConstantRange::default()
-            //                 .size(block.size)
-            //                 .offset(block.offset)
-            //                 .stage_flags(ShaderStageFlags::COMPUTE),
-            //         );
-            //     }
-            // }
+            if let Ok(push_blocks) = reflection.push_constant_ranges() {
+                push_blocks.into_iter().for_each(|block| {
+                    constant_ranges.push(
+                        PushConstantRange::default()
+                            .size(block.size)
+                            .offset(block.offset)
+                            .stage_flags(ShaderStageFlags::COMPUTE),
+                    );
+                });
+            }
 
             let mut layouts = vec![DescriptorSetLayout::default(); descriptor_set_bindings.len()];
             let mut pool_sizes = Vec::new();

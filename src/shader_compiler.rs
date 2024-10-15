@@ -30,6 +30,12 @@ impl ShaderReflection {
             Err(_) => None,
         }
     }
+
+    pub fn push_constant_ranges(
+        &self,
+    ) -> Result<Option<rspirv_reflect::PushConstantInfo>, rspirv_reflect::ReflectError> {
+        self.reflection.get_push_constant_range()
+    }
 }
 
 pub struct CompilationResult {
