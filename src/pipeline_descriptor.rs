@@ -23,6 +23,7 @@ pub struct ComputePipeline {
     pipeline_layout: PipelineLayout,
     pipeline: Pipeline,
     descriptor_sets: Vec<DescriptorSet>,
+    workgroup_size: (u32, u32, u32),
 }
 
 impl ComputePipeline {
@@ -293,11 +294,14 @@ impl ComputePipeline {
                     .expect("Descriptor set allocation failed")
             };
 
+            let workgroup_size = reflection.compute_work_group_size().unwrap_or((1, 1, 1));
+
             Some(Self {
                 device,
                 pipeline_layout,
                 pipeline,
                 descriptor_sets,
+                workgroup_size,
             })
         } else {
             println!("{}", result.error_string());
