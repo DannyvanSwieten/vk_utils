@@ -9,7 +9,7 @@ use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 
 use ash::ext::{debug_utils, metal_surface};
-use ash::khr::win32_surface;
+use ash::khr::{get_physical_device_properties2, portability_enumeration, win32_surface};
 
 use crate::gpu::Gpu;
 
@@ -79,10 +79,10 @@ impl Vulkan {
             .map(|s| s.to_string() + "\0")
             .collect::<Vec<_>>();
 
-        let extension_names_raw: Vec<*const i8> =
+        let mut extension_names_raw: Vec<*const i8> =
             extension_names.iter().map(|e| e.as_ptr() as _).collect();
 
-        let flags = InstanceCreateFlags::default();
+        let mut flags = InstanceCreateFlags::default();
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         {
             flags |= InstanceCreateFlags::ENUMERATE_PORTABILITY_KHR;
