@@ -17,10 +17,15 @@ impl DeviceContext {
                 .queue_priorities(&priorities)
                 .queue_family_index(index)];
 
-            let extension_names_raw: Vec<*const i8> = extensions
+            let mut extension_names_raw: Vec<*const i8> = extensions
                 .iter()
                 .map(|layer_name| layer_name.as_ptr() as _)
                 .collect();
+
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            {
+                extension_names_raw.push(ash::khr::portability_subset::NAME.as_ptr());
+            }
 
             let builder = builder
                 .enabled_extension_names(&extension_names_raw)
