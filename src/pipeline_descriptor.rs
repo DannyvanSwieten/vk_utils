@@ -203,6 +203,10 @@ impl ComputePipeline {
             let mut constant_ranges = Vec::new();
             if let Ok(push_blocks) = reflection.push_constant_ranges() {
                 push_blocks.into_iter().for_each(|block| {
+                    #[cfg(debug_assertions)]
+                    {
+                        println!("Push constant range: {:?}", block);
+                    }
                     constant_ranges.push(
                         PushConstantRange::default()
                             .size(block.size)
