@@ -19,7 +19,6 @@ pub fn load_spirv(path: &str) -> Vec<u32> {
 }
 
 pub struct ShaderReflection {
-    // module: ShaderModule,
     reflection: Reflection,
 }
 
@@ -35,6 +34,10 @@ impl ShaderReflection {
         &self,
     ) -> Result<Option<rspirv_reflect::PushConstantInfo>, rspirv_reflect::ReflectError> {
         self.reflection.get_push_constant_range()
+    }
+
+    pub fn compute_work_group_size(&self) -> Option<(u32, u32, u32)> {
+        self.reflection.get_compute_group_size()
     }
 }
 
