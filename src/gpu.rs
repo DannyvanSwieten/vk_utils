@@ -77,7 +77,28 @@ impl Gpu {
         )
     }
 
-    pub fn device_context<'b>(&self, extensions: &[&str]) -> DeviceContext {
+    pub fn has_extension(&self, extension: &str) -> bool {
+        self.device_extensions().iter().any(|ext| unsafe {
+            CStr::from_ptr(ext.extension_name.as_ptr())
+                .to_str()
+                .unwrap()
+                == extension
+        })
+    }
+
+    pub fn has_all_extensions(&self, extensions: &[&str]) -> bool {
+        let available_extensions = self.device_extensions();
+        extensions.iter().all(|ext| {
+            available_extensions.iter().any(|available_ext| unsafe {
+                CStr::from_ptr(available_ext.extension_name.as_ptr())
+                    .to_str()
+                    .unwrap()
+                    == *ext
+            })
+        })
+    }
+
+    pub fn device_context(&self, extensions: &[&str]) -> DeviceContext {
         DeviceContext::new(self, extensions, DeviceCreateInfo::default())
     }
 

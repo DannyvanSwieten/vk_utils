@@ -27,6 +27,10 @@ impl DeviceContext {
                 extension_names_raw.push(ash::khr::portability_subset::NAME.as_ptr());
             }
 
+            if !gpu.has_all_extensions(extensions) {
+                panic!("Missing extensions");
+            }
+
             let builder = builder
                 .enabled_extension_names(&extension_names_raw)
                 .queue_create_infos(&queue_info);
