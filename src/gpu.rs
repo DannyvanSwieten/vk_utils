@@ -28,6 +28,24 @@ impl Gpu {
                 .vk_instance()
                 .get_physical_device_properties(*physical_device);
 
+            #[cfg(debug_assertions)]
+            {
+                // Print out the all device extensions
+                let device_extensions = vulkan
+                    .vk_instance()
+                    .enumerate_device_extension_properties(*physical_device)
+                    .expect("Device Extension enumeration failed");
+
+                println!("Available Device Extensions: ");
+                for extension in device_extensions.iter() {
+                    let c_str = CStr::from_ptr(extension.extension_name.as_ptr());
+                    println!(
+                        "\t{}",
+                        c_str.to_str().expect("Failed to convert CStr to str")
+                    );
+                }
+            }
+
             let mut memory_properties = PhysicalDeviceMemoryProperties2::default();
             vulkan
                 .vk_instance()

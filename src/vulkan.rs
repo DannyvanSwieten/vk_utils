@@ -91,6 +91,16 @@ impl Vulkan {
             extension_names_raw.push(get_physical_device_properties2::NAME.as_ptr());
         }
 
+        #[cfg(debug_assertions)]
+        {
+            // print all instance extensions
+            let available_extensions = Self::available_instance_extensions();
+            println!("Available Instance extensions:");
+            for ext in available_extensions {
+                println!("{}", ext);
+            }
+        }
+
         let create_info = InstanceCreateInfo::default()
             .application_info(&appinfo)
             .enabled_layer_names(&layers_names_raw)
