@@ -16,7 +16,7 @@ pub mod swapchain_util;
 pub mod vulkan;
 pub mod wait_handle;
 
-pub use ash::ext::debug_utils;
+pub use ash::ext::{buffer_device_address, debug_utils};
 pub use ash::vk::{
     AccessFlags, BufferUsageFlags, DescriptorSetLayoutBinding, DescriptorType, Format, ImageLayout,
     ImageUsageFlags, MemoryPropertyFlags, PhysicalDeviceFeatures2KHR,
