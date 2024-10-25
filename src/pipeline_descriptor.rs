@@ -126,7 +126,7 @@ impl ComputePipeline {
                             b = b.descriptor_type(DescriptorType::STORAGE_TEXEL_BUFFER);
                         }
                         rspirv_reflect::DescriptorType::UNIFORM_BUFFER => {
-                            b = b.descriptor_type(DescriptorType::STORAGE_BUFFER);
+                            b = b.descriptor_type(DescriptorType::UNIFORM_BUFFER);
                         }
                         rspirv_reflect::DescriptorType::STORAGE_BUFFER => {
                             b = b.descriptor_type(DescriptorType::STORAGE_BUFFER);
