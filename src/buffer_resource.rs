@@ -222,7 +222,9 @@ impl BufferResource {
             device,
             size,
             MemoryPropertyFlags::HOST_VISIBLE,
-            BufferUsageFlags::STORAGE_BUFFER | BufferUsageFlags::SHADER_DEVICE_ADDRESS,
+            BufferUsageFlags::STORAGE_BUFFER
+                | BufferUsageFlags::SHADER_DEVICE_ADDRESS
+                | BufferUsageFlags::TRANSFER_DST,
         )
     }
 
