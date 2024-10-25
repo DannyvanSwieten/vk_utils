@@ -99,6 +99,22 @@ impl Image2DResource {
             }
         }
     }
+
+    pub fn new_device_local_storage_image(
+        context: Rc<DeviceContext>,
+        width: u32,
+        height: u32,
+        format: Format,
+    ) -> Self {
+        Self::new(
+            context,
+            width,
+            height,
+            format,
+            ImageUsageFlags::STORAGE | ImageUsageFlags::TRANSFER_SRC,
+            MemoryPropertyFlags::DEVICE_LOCAL,
+        )
+    }
 }
 
 impl ImageResource for Image2DResource {
