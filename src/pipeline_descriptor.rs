@@ -189,7 +189,7 @@ impl ComputePipeline {
         let result = ShaderCompiler::compile_string(src, ShaderKind::Compute, "", entry_point);
         let this = if !result.failed() {
             let reflection = result.reflect();
-            let mut descriptor_set_bindings = HashMap::new(); //Self::create_descriptor_set_bindings(&reflection);
+            let mut descriptor_set_bindings = HashMap::new();
             if let Some(explicit_bindings) = explicit_bindings {
                 for (index, bindings) in explicit_bindings {
                     if let std::collections::hash_map::Entry::Vacant(e) =
